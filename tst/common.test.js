@@ -205,7 +205,8 @@ test('localsearch exists', function(t) {
   var changelog = {
     object: {
       targetdn: 'cn=supson, o=yunong'
-    }
+    },
+    localDn: 'cn=supson, o=yunong'
   };
 
   common.localSearch(changelog, replContext, function(bail) {
@@ -224,7 +225,8 @@ test('localsearch dne', function(t) {
   var changelog = {
     object: {
       targetdn: 'cn=foobarbazcar, o=yunong'
-    }
+    },
+    localDn: 'cn=foobarbazcar, o=yunong'
   };
 
   common.localSearch(changelog, replContext, function(bail) {

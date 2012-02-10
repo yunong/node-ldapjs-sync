@@ -1,21 +1,26 @@
 var add         = require('../lib/add');
 var common      = require('../lib/common');
 var del         = require('../lib/delete');
-var test          = require('tap').test;
-var inMemLdap     = require('./inmemLdap.js');
-var ReplContext   = require('../lib/replContext.js');
-var ldap          = require('ldapjs');
-var log4js        = require('log4js');
-var uuid          = require('node-uuid');
-var ldapjsRiak    = require('ldapjs-riak');
-var ldapjsSync    = require('../lib/index');
+var ldap        = require('ldapjs');
+var log4js      = require('log4js');
+var test        = require('tap').test;
+var uuid        = require('node-uuid');
+var vm          = require('vm');
+var ldapjsRiak  = require('ldapjs-riak');
+var ldapjsSync  = require('../lib/index');
+var EntryQueue  = require('../lib/entryQueue');
+var ReplContext = require('../lib/replContext');
+
+var inMemLdap   = require('./inmemLdap');
 
 ///--- Globals
-
 var SUFFIX        = 'o=yunong';
+var LOCAL_SUFFIX  = 'o=somewhereovertherainbow';
+var REPL_SUFFIX   = 'cn=repl, ' + LOCAL_SUFFIX;
+var SOCKET        = '/tmp/.' + uuid();
 var REMOTE_PORT   = 23364;
 var TOTAL_ENTRIES = 5;
-var REMOTE_URL    = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
+var REMOTE_URL    = 'ldap://cn=root:secret@0.0.0.0:' + REMOTE_PORT + '/' +
                     SUFFIX + '??sub?(uid=*)';
 
 var LOCAL_PORT    = 23456;
@@ -29,6 +34,14 @@ var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
     returnECs: true
   }
 });
+
+var REPL_CONTEXT_OPTIONS = {
+  log4js: log4js,
+  url: REMOTE_URL,
+  localUrl: LOCAL_URL,
+  checkpointDn: LOCAL_SUFFIX,
+  replSuffix: REPL_SUFFIX
+};
 
 var suffix = {
   objectClass: ['top', 'organization'],
@@ -44,23 +57,22 @@ var remoteBackend;
 var remoteClient;
 var remoteLdap;
 
-var REPL_CONTEXT_OPTIONS = {
-  log4js: log4js,
-  url: REMOTE_URL,
-  localUrl: LOCAL_URL,
-  checkpointDn: SUFFIX,
-  replSuffix: 'cn=repl, o=yunong'
-};
 
+var entryQueue;
+var url = ldap.url.parse(REMOTE_URL, true);
+
+var replContext;
 ///--- Tests
 
 test('setup-local', function(t) {
-  inMemLdap.startServer({suffix: SUFFIX, port: LOCAL_PORT}, function(server) {
+  inMemLdap.startServer({suffix: LOCAL_SUFFIX, port: LOCAL_PORT},
+                        function(server) {
     t.ok(server);
     localClient = ldap.createClient({
       url: LOCAL_URL,
       log4js: log4js
     });
+
     localClient.once('connect', function(id) {
       t.ok(id);
       t.ok(localClient);
@@ -76,6 +88,26 @@ test('setup-local', function(t) {
   });
 });
 
+test('setup-local-fixtures', function(t) {
+  var entry = {
+    objectclass: 'yellowbrickroad'
+  };
+
+  localClient.add(LOCAL_SUFFIX, entry, function(err, res) {
+    if (err) {
+      t.fail(err);
+    }
+    t.ok(res);
+    localClient.add(REPL_SUFFIX, entry, function(err, res) {
+      if (err) {
+        t.fail(err);
+      }
+      t.ok(res);
+      t.end();
+    });
+  });
+});
+
 test('setup-remote', function(t) {
   var spawn = require('child_process').spawn;
   remoteLdap = spawn('node', ['./tst/remoteInmemldap.js'], {
@@ -85,15 +117,15 @@ test('setup-remote', function(t) {
   });
 
   remoteLdap.stdout.on('data', function (data) {
-    console.log('remote stdout: ' + data);
+    console.log('remote_stdout: ' + data);
   });
 
   remoteLdap.stderr.on('data', function (data) {
-    console.log('remote stderr: ' + data);
+    console.log('remote_stderr: ' + data);
   });
 
   remoteLdap.on('exit', function (code) {
-    console.log('remote child process exited with code ' + code);
+    console.log('remote_child process exited with code ' + code);
   });
 
   t.ok(remoteLdap);
@@ -110,6 +142,14 @@ test('setup-remote-client', function(t) {
     t.ok(id);
     t.ok(remoteClient);
     console.log('remote client connected');
+    remoteClient.bind('cn=root', 'secret', function(err, res) {
+      if (err) {
+        t.fail(err);
+        t.end();
+      }
+      t.ok(remoteClient);
+      t.end();
+    });
     t.end();
   });
 });
@@ -125,10 +165,12 @@ test('setup-replcontext', function(t) {
     t.ok(replContext.remoteClient);
     t.ok(replContext.url);
     t.ok(replContext.entryQueue);
+    t.ok(replContext.replSuffix);
     entryQueue = replContext.entryQueue;
-    // wait before we end because the search connection is just getting started
-    // otherwise the test can't shut down cleanly
-    setTimeout(function() {t.end();}, 2000);
+    // we are technically good to go here after the init event, however, the
+    // changelog psearch is asynchronous, so we have to wait here a bit while
+    // that finishes. 1.5 seconds ought to do it.
+    setTimeout(function(){ t.end(); }, 1500);
   });
 });
 
@@ -149,22 +191,23 @@ test('add entry to datastore', function(t) {
       objectclass: 'changeLogEntry'
     },
     remoteEntry: {
-      objectclass: [ 'organizationalUnit' ],
-      ou: [ 'users' ],
+      objectclass: 'organizationalUnit',
+      ou: 'users',
       uid: 'foo'
-    }
+    },
+    localDn: 'o=yunong, ' + REPL_SUFFIX
   };
 
   add.add(changelog, replContext, function() {
-    replContext.localClient.search(changelog.object.targetdn,
+    replContext.localClient.search(changelog.localDn,
                                    function(err, res) {
       t.ok(res);
       t.end();
       res.on('searchEntry', function(entry) {
         t.ok(entry);
         t.ok(entry.object);
-        t.equal(entry.object.dn, changelog.object.targetdn);
-        t.equal(entry.object.objectclass, changelog.remoteEntry.uid);
+        // t.equal(entry.object.dn, changelog.object.targetdn);
+        // t.equal(entry.object.objectclass, changelog.remoteEntry.uid);
         storedLocalEntry = entry;
       });
 
@@ -185,7 +228,8 @@ test('delete local search entry dne', function(t) {
       changenumber: '1326414273443',
       changetype: 'delete',
       objectclass: 'changeLogEntry'
-    }
+    },
+    localDn: 'cn=foo, o=yunong, ' + REPL_SUFFIX
   };
 
   del.localSearch(changelog, replContext, function(bail) {
@@ -193,6 +237,7 @@ test('delete local search entry dne', function(t) {
       t.end();
     } else {
       t.fail();
+      t.end();
     }
   });
 });
@@ -207,7 +252,8 @@ test('delete local search entry exists', function(t) {
       changenumber: '1326414273443',
       changetype: 'delete',
       objectclass: 'changeLogEntry'
-    }
+    },
+    localDn: 'o=yunong, ' + REPL_SUFFIX
   };
 
   del.localSearch(changelog, replContext, function(bail) {
@@ -216,14 +262,15 @@ test('delete local search entry exists', function(t) {
     } else {
       t.ok(changelog.localEntry);
       t.ok(changelog.localEntry.object);
-      t.equal(changelog.localEntry.object.dn, changelog.object.targetdn);
+      t.equal(changelog.localEntry.object.dn, changelog.localDn);
       t.end();
     }
   });
 });
 
 test('determineDelete entry matches', function(t) {
-  localClient.add('cn=supson, o=yunong', {uid: uuid()}, function(err, res) {
+  localClient.add('cn=supson, o=yunong, ' + REPL_SUFFIX, {uid: uuid()},
+                  function(err, res) {
     if (err) {
       t.fail(err);
       t.end();
@@ -240,11 +287,12 @@ test('determineDelete entry matches', function(t) {
         objectclass: 'changeLogEntry'
       },
       localEntry: {
-        dn: 'cn=supson, o=yunong',
+        dn: 'cn=supson, o=yunong, ' + REPL_SUFFIX,
         object: {
           uid: uuid()
         }
-      }
+      },
+      localDn: 'cn=supson, o=yunong, ' + REPL_SUFFIX
     };
 
     del.determineDelete(changelog, replContext, function() {
@@ -252,8 +300,8 @@ test('determineDelete entry matches', function(t) {
         filter: '(uid=*)'
       };
       // entry should be deleted
-      replContext.localClient.search('cn=supson, o=yunong', opts,
-                                      function(err, res) {
+      replContext.localClient.search(changelog.localDn, opts,
+                                     function(err, res) {
         var retreived = false;
         if (err) {
           t.fail(err);
@@ -274,7 +322,8 @@ test('determineDelete entry matches', function(t) {
 });
 
 test('determineDelete entry does not match', function(t) {
-  localClient.add('cn=supsons, o=yunong', {l: 'foo'}, function(err, res) {
+  localClient.add('cn=supsons, o=yunong, ' + REPL_SUFFIX, {l: 'foo'},
+                  function(err, res) {
     if (err) {
       t.fail(err);
       t.end();
@@ -291,9 +340,10 @@ test('determineDelete entry does not match', function(t) {
         objectclass: 'changeLogEntry'
       },
       localEntry: {
-        dn: 'cn=supsons, o=yunong',
+        dn: 'cn=supsons, o=yunong, ' + REPL_SUFFIX,
         object: {}
-      }
+      },
+      localDn: 'cn=supsons, o=yunong, ' + REPL_SUFFIX
     };
 
     del.determineDelete(changelog, replContext, function() {
@@ -301,8 +351,8 @@ test('determineDelete entry does not match', function(t) {
         filter: '(l=*)'
       };
       // entry should not be deleted as it lacks the uid attr
-      replContext.localClient.search('cn=supsons, o=yunong', opts,
-                                      function(err, res) {
+      replContext.localClient.search(changelog.localDn, opts,
+                                     function(err, res) {
         var retrieved = false;
 
         if (err) {
@@ -313,7 +363,7 @@ test('determineDelete entry does not match', function(t) {
         res.on('searchEntry', function(entry) {
           t.ok(entry);
           t.ok(entry.object);
-          t.equal(entry.object.dn, 'cn=supsons, o=yunong');
+          t.equal(entry.object.dn, 'cn=supsons, o=yunong, ' + REPL_SUFFIX);
           retrieved = true;
         });
 

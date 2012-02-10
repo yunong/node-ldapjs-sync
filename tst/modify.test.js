@@ -14,6 +14,8 @@ var ReplContext = require('../lib/replContext');
 var REMOTE_URL  ='ldap://127.0.0.1:' + 23444 + '/' +
                  'o=yunong' + '??sub?(objectclass=*)';
 var SUFFIX        = 'o=yunong';
+var LOCAL_SUFFIX  = 'o=somewhereovertherainbow';
+var REPL_SUFFIX   = 'cn=repl, ' + LOCAL_SUFFIX;
 var SOCKET        = '/tmp/.' + uuid();
 var REMOTE_PORT   = 23364;
 var TOTAL_ENTRIES = 5;
@@ -60,7 +62,8 @@ test('setup-replcontext', function(t) {
   replContext = {
     url: ldap.url.parse(REMOTE_URL, true),
     log: log4js.getLogger('modify-test'),
-    log4js: log4js
+    log4js: log4js,
+    replSuffix: REPL_SUFFIX
   };
 
   t.ok(replContext.url);
@@ -93,7 +96,8 @@ test('determine modify condition 1', function(t) {
         objectclass: [ 'user' ],
         uid: uuid()
       }
-    }
+    },
+    localDn: 'cn=foo, o=yunong'
   };
 
   // determine modify should call mod
@@ -131,7 +135,8 @@ test('determine modify condition 2', function(t) {
       object: {
         objectclass: [ 'user' ]
       }
-    }
+    },
+    localDn: 'cn=foo, o=yunong'
   };
 
   // determine modify should not call mod
@@ -189,7 +194,8 @@ test('determine modify condition 3', function(t) {
         objectclass: [ 'user' ],
         uid: uuid()
       }
-    }
+    },
+    localDn: 'cn=foo, o=yunong'
   };
 
   // determine modify should call delete
@@ -227,7 +233,8 @@ test('determine modify condition 4', function(t) {
         objectclass: [ 'user' ],
         pets: ['honey badger', 'bear']
       }
-    }
+    },
+    localDn: 'cn=foo, o=yunong'
   };
 
   replContext.localClient = mock.mock('modify').takes(
@@ -261,7 +268,8 @@ test('determine modify condition 5', function(t) {
           vals: ['honey badger', 'bear']
         }
       }]
-    }
+    },
+    localDn: 'cn=foo, o=yunong'
   };
 
   replContext.localClient = mock.mock('add').takes(changelog.object.targetdn,

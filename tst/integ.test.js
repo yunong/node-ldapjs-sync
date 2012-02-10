@@ -13,6 +13,8 @@ var inMemLdap   = require('./inmemLdap');
 
 ///--- Globals
 var SUFFIX        = 'o=yunong';
+var LOCAL_SUFFIX  = 'o=somewhereovertherainbow';
+var REPL_SUFFIX   = 'cn=repl, ' + LOCAL_SUFFIX;
 var SOCKET        = '/tmp/.' + uuid();
 var REMOTE_PORT   = 23364;
 var TOTAL_ENTRIES = 5;
@@ -35,8 +37,8 @@ var REPL_CONTEXT_OPTIONS = {
   log4js: log4js,
   url: REMOTE_URL,
   localUrl: LOCAL_URL,
-  checkpointDn: SUFFIX,
-  replSuffix: 'cn=repl, o=yunong'
+  checkpointDn: LOCAL_SUFFIX,
+  replSuffix: REPL_SUFFIX
 };
 
 var suffix = {
@@ -61,7 +63,8 @@ var replContext;
 ///--- Tests
 
 test('setup-local', function(t) {
-  inMemLdap.startServer({suffix: SUFFIX, port: LOCAL_PORT}, function(server) {
+  inMemLdap.startServer({suffix: LOCAL_SUFFIX, port: LOCAL_PORT},
+                        function(server) {
     t.ok(server);
     localClient = ldap.createClient({
       url: LOCAL_URL,
@@ -79,6 +82,26 @@ test('setup-local', function(t) {
         t.ok(res);
         t.end();
       });
+    });
+  });
+});
+
+test('setup-local-fixtures', function(t) {
+  var entry = {
+    objectclass: 'yellowbrickroad'
+  };
+
+  localClient.add(LOCAL_SUFFIX, entry, function(err, res) {
+    if (err) {
+      t.fail(err);
+    }
+    t.ok(res);
+    localClient.add(REPL_SUFFIX, entry, function(err, res) {
+      if (err) {
+        t.fail(err);
+      }
+      t.ok(res);
+      t.end();
     });
   });
 });
@@ -140,23 +163,24 @@ test('setup-replcontext', function(t) {
     t.ok(replContext.remoteClient);
     t.ok(replContext.url);
     t.ok(replContext.entryQueue);
+    t.ok(replContext.replSuffix);
     entryQueue = replContext.entryQueue;
     // we are technically good to go here after the init event, however, the
     // changelog psearch is asynchronous, so we have to wait here a bit while
-    // that finishes. 3 seconds ought to do it.
-    setTimeout(function(){ t.end(); }, 3000);
+    // that finishes. 1.5 seconds ought to do it.
+    setTimeout(function(){ t.end(); }, 1500);
   });
 });
 
 test('add', function(t) {
   var entry = { objectclass: 'executor', uid: 'foo' };
-  remoteClient.add('cn=supson, o=yunong', entry, function(err, res) {
+  remoteClient.add('o=yunong', entry, function(err, res) {
     if (err) {
       t.fail(err);
     }
 
     entryQueue.on('popped', function(changelog, entryQueue) {
-      localClient.search('cn=supson, o=yunong', function(err, res) {
+      localClient.search('o=yunong, ' + REPL_SUFFIX, function(err, res) {
         console.log('searching locally');
         if (err) {
           t.fail(err);
@@ -170,7 +194,7 @@ test('add', function(t) {
           t.ok(entry.attributes);
           t.ok(entry.attributes.length);
           t.ok(entry.object);
-          t.equal(entry.dn.toString(), 'cn=supson, o=yunong');
+          t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
           // t.end();
         });
 
@@ -187,6 +211,45 @@ test('add', function(t) {
   });
 });
 
+// test('add', function(t) {
+//   var entry = { objectclass: 'executor', uid: 'foo' };
+//   remoteClient.add('cn=supson, o=yunong', entry, function(err, res) {
+//     if (err) {
+//       t.fail(err);
+//     }
+
+//     entryQueue.on('popped', function(changelog, entryQueue) {
+//       localClient.search('cn=supson, o=yunong', function(err, res) {
+//         console.log('searching locally');
+//         if (err) {
+//           t.fail(err);
+//           t.end();
+//         }
+
+//         res.on('searchEntry', function(entry) {
+//           t.ok(entry);
+//           t.ok(entry instanceof ldap.SearchEntry);
+//           t.ok(entry.dn.toString());
+//           t.ok(entry.attributes);
+//           t.ok(entry.attributes.length);
+//           t.ok(entry.object);
+//           t.equal(entry.dn.toString(), 'cn=supson, o=yunong');
+//           // t.end();
+//         });
+
+//         res.on('error', function(err) {
+//           t.fail(err);
+//           t.end();
+//         });
+
+//         res.on('end', function(res) {
+//           t.end();
+//         });
+//       });
+//     });
+//   });
+// });
+
 test('modify', function(t) {
   var change = {
     type: 'add',
@@ -195,13 +258,14 @@ test('modify', function(t) {
     }
   };
 
-  remoteClient.modify('cn=supson, o=yunong', change, function(err, res) {
+  remoteClient.modify('o=yunong', change, function(err, res) {
     if (err) {
       t.fail(err);
       t.end();
     }
     entryQueue.on('popped', function(changelog, entryQueue) {
-      localClient.search('cn=supson, o=yunong', function(err, res) {
+      localClient.search('o=yunong, ' + REPL_SUFFIX,
+                         function(err, res) {
         if (err) {
           t.fail(err);
           t.end();
@@ -214,7 +278,7 @@ test('modify', function(t) {
           t.ok(entry.attributes);
           t.ok(entry.attributes.length);
           t.ok(entry.object);
-          t.equal(entry.dn.toString(), 'cn=supson, o=yunong');
+          t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
           t.equal(entry.object.type, 'pets');
           t.equal(entry.object.vals[0], 'honey badger');
           t.equal(entry.object.vals[1], 'bear');
@@ -230,32 +294,33 @@ test('modify', function(t) {
   });
 });
 
-// test('delete', function(t) {
-//   remoteClient.del('cn=supson, o=yunong', function(err, res) {
-//     if (err) {
-//       t.fail(err);
-//       t.end();
-//     }
-//     entryQueue.on('popped', function(changelog, entryQueue) {
-//       localClient.search('cn=supson, o=yunong', function(err, res) {
-//         if (err) {
-//           t.fail(err);
-//           t.end();
-//         }
-//         res.on('searchEntry', function(entry) {
-//           t.fail('deleted entry should not exist locally');
-//         });
-//         res.on('error', function(err) {
-//           t.equal(err.code, 32);
-//           t.end();
-//         });
-//         res.on('end', function(res) {
-//           t.end();
-//         });
-//       });
-//     });
-//   });
-// });
+test('delete', function(t) {
+  remoteClient.del('o=yunong', function(err, res) {
+    if (err) {
+      t.fail(err);
+      t.end();
+    }
+    entryQueue.on('popped', function(changelog, entryQueue) {
+      localClient.search('o=yunong, ' + REPL_SUFFIX,
+                         function(err, res) {
+        if (err) {
+          t.fail(err);
+          t.end();
+        }
+        res.on('searchEntry', function(entry) {
+          t.fail('deleted entry should not exist locally');
+        });
+        res.on('error', function(err) {
+          t.equal(err.code, 32);
+          t.end();
+        });
+        res.on('end', function(res) {
+          t.end();
+        });
+      });
+    });
+  });
+});
 
 test('tear-down', function(t) {
   if (remoteLdap) {
