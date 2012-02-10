@@ -1,0 +1,34 @@
+version: 1
+
+dn: o=yunong
+objectclass: organization
+o: yunong
+
+dn: ou=users, o=yunong
+objectclass: organizationalUnit
+ou: users
+
+dn: ou=groups, o=yunong
+objectclass: organizationalUnit
+ou: groups
+
+dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=yunong
+login: admin
+uuid: 930896af-bf8c-48d4-885c-6573a94b1853
+userpassword: joypass123
+email: nobody@joyent.com
+cn: admin
+sn: user
+company: Joyent
+address: Joyent, Inc.
+address: 345 California Street, Suite 2000
+city: San Francisco
+state: CA
+postalCode: 94104
+country: USA
+phone: +1 415 400 0600
+objectclass: sdcPerson
+
+dn: cn=operators, ou=groups, o=yunong
+uniquemember: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=yunong
+objectclass: groupOfUniqueNames

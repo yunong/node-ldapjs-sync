@@ -56,7 +56,8 @@ test('setup-local', function(t) {
       l: false,
       cn: false,
       o: false,
-      uid: true
+      uid: true,
+      changenumber: true
     },
     client: {
       url: 'http://localhost:8098',
@@ -158,45 +159,45 @@ test('delete child', function(t) {
   });
 });
 
-test('setup-sync', function(t) {
-  sync = ldapjsSync.createSync({
-    localClient: localClient,
-    urls: REMOTE_URL,
-    log4js: log4js
-  });
+// test('setup-sync', function(t) {
+//   sync = ldapjsSync.createSync({
+//     localClient: localClient,
+//     urls: REMOTE_URL,
+//     log4js: log4js
+//   });
 
- setTimeout(function() { t.end(); }, 3000);
-});
+//  setTimeout(function() { t.end(); }, 3000);
+// });
 
-test('add-sync', function(t) {
-  console.log('verifying replication');
-  var opts = {
-    scope: 'sub'
-  };
+// test('add-sync', function(t) {
+//   console.log('verifying replication');
+//   var opts = {
+//     scope: 'sub'
+//   };
 
-  localClient.search(SUFFIX, opts, function(err, res) {
-    t.ifError(err);
-    t.ok(res);
+//   localClient.search(SUFFIX, opts, function(err, res) {
+//     t.ifError(err);
+//     t.ok(res);
 
-    var retrieved = 0;
-    res.on('searchEntry', function(entry) {
-      console.log('search entries', entry.object);
-      retrieved++;
-    });
-    res.on('error', function(err) {
-      console.log('add-sync err', err);
-      t.fail(err);
-    });
-    res.on('end', function(res) {
-      t.ok(res);
-      t.ok(res instanceof ldap.SearchResponse);
-      t.equal(res.status, 0);
-      // not total_entries + 1 because we deleted one of the entries
-      t.equal(retrieved, TOTAL_ENTRIES);
-      t.end();
-    });
-  });
-});
+//     var retrieved = 0;
+//     res.on('searchEntry', function(entry) {
+//       console.log('search entries', entry.object);
+//       retrieved++;
+//     });
+//     res.on('error', function(err) {
+//       console.log('add-sync err', err);
+//       t.fail(err);
+//     });
+//     res.on('end', function(res) {
+//       t.ok(res);
+//       t.ok(res instanceof ldap.SearchResponse);
+//       t.equal(res.status, 0);
+//       // not total_entries + 1 because we deleted one of the entries
+//       t.equal(retrieved, TOTAL_ENTRIES);
+//       t.end();
+//     });
+//   });
+// });
 
 // test('cleanup', function(t) {
 //     remoteLdap.kill('SIGHUP');

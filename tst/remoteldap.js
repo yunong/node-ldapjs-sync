@@ -30,7 +30,8 @@ var remoteBackend = ldapjsRiak.createBackend({
     l: false,
     cn: false,
     o: false,
-    uid: true
+    uid: true,
+    changenumber: true
   },
   client: {
     url: 'http://localhost:8098',
