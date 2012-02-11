@@ -172,6 +172,8 @@ test('setup-replcontext', function(t) {
   });
 });
 
+
+///--- Simple CRUD
 test('add', function(t) {
   var entry = { objectclass: 'executor', uid: 'foo' };
   remoteClient.add('o=yunong', entry, function(err, res) {
@@ -186,7 +188,7 @@ test('add', function(t) {
           t.fail(err);
           t.end();
         }
-
+        var gotEntry;
         res.on('searchEntry', function(entry) {
           t.ok(entry);
           t.ok(entry instanceof ldap.SearchEntry);
@@ -195,7 +197,7 @@ test('add', function(t) {
           t.ok(entry.attributes.length);
           t.ok(entry.object);
           t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
-          // t.end();
+          gotEntry = true;
         });
 
         res.on('error', function(err) {
@@ -204,51 +206,13 @@ test('add', function(t) {
         });
 
         res.on('end', function(res) {
+          t.ok(gotEntry);
           t.end();
         });
       });
     });
   });
 });
-
-// test('add', function(t) {
-//   var entry = { objectclass: 'executor', uid: 'foo' };
-//   remoteClient.add('cn=supson, o=yunong', entry, function(err, res) {
-//     if (err) {
-//       t.fail(err);
-//     }
-
-//     entryQueue.on('popped', function(changelog, entryQueue) {
-//       localClient.search('cn=supson, o=yunong', function(err, res) {
-//         console.log('searching locally');
-//         if (err) {
-//           t.fail(err);
-//           t.end();
-//         }
-
-//         res.on('searchEntry', function(entry) {
-//           t.ok(entry);
-//           t.ok(entry instanceof ldap.SearchEntry);
-//           t.ok(entry.dn.toString());
-//           t.ok(entry.attributes);
-//           t.ok(entry.attributes.length);
-//           t.ok(entry.object);
-//           t.equal(entry.dn.toString(), 'cn=supson, o=yunong');
-//           // t.end();
-//         });
-
-//         res.on('error', function(err) {
-//           t.fail(err);
-//           t.end();
-//         });
-
-//         res.on('end', function(res) {
-//           t.end();
-//         });
-//       });
-//     });
-//   });
-// });
 
 test('modify', function(t) {
   var change = {
