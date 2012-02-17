@@ -175,7 +175,6 @@ test('setup-replcontext', function(t) {
 
 ///--- Now add a bunch of stuff
 
-
 test('bootstrap', function(t) {
   remoteClient.add('o=yunong', {objectclass: 'executor', uid: 'foo'},
                    function(err, res) {
@@ -188,8 +187,6 @@ test('bootstrap', function(t) {
       var suffix = ', ou=protoss, o=yunong';
       remoteClient.add('cn=zealot' + suffix, protoss, function(err, res) {});
       remoteClient.add('cn=stalker' + suffix, protoss, function(err, res) {});
-      remoteClient.add('cn=sentry' + suffix, protoss, function(err, res) {});
-      remoteClient.add('cn=voidray' + suffix, protoss, function(err, res) {});
       remoteClient.add('cn=colossus' + suffix, protoss, function(err, res) {});
     });
 
@@ -199,6 +196,7 @@ test('bootstrap', function(t) {
     };
     remoteClient.add('ou=zerg, o=yunong', zerg, function(err, res) {
       var suffix = ', ou=zerg, o=yunong';
+      zerg.attack = 'melee';
       remoteClient.add('cn=zergling' + suffix, zerg, function(err, res) {});
       remoteClient.add('cn=roach' + suffix, zerg, function(err, res) {});
       remoteClient.add('cn=hydralisk' + suffix, zerg, function(err, res) {});
@@ -213,7 +211,141 @@ test('bootstrap', function(t) {
   setTimeout(function() { t.end(); }, 2000);
 });
 
+
+/**
+ * The entry exists locally and matches the replication filter.
+ * cn=broodlord deleted locally
+ */
+test('delete condition 1', function(t) {
+  var dn = 'cn=broodlord, cn=infestor, ou=zerg, o=yunong';
+  remoteClient.del(dn, function(err, res) {
+    if (err) {
+      t.fail(err);
+      t.end();
+    }
+
+    t.end();
+  });
+});
+
+/**
+ * The entry doesn't exist locally.
+ * cn=archon deleted locally
+ */
+test('delete condition 2', function(t) {
+  // create a new remote entry that doesn't match the filter
+  var dn = 'cn=archon, ou=protoss, o=yunong';
+  var entry = {
+    objectclass: 'protoss' // no uid field
+  };
+
+  remoteClient.add(dn, entry, function(err, res) {
+    if (err) {
+      t.fail(err);
+      t.end();
+    }
+    // delete this entry
+    remoteClient.del(dn, function(err, res) {
+      if (err) {
+        t.fail(err);
+        t.end();
+      }
+      t.end();
+    });
+  });
+});
+
+/**
+ * The entry exists locally and doesn't match the replication filter.
+ * local server should still have cn=mothership
+ */
+test('delete condition 3', function(t) {
+  var dn = 'cn=mothership, ou=protoss, o=yunong';
+  var entry = {
+    objectclass: 'protoss'
+  };
+
+  // add locally first
+  localClient.add(dn + ', ' + REPL_SUFFIX, entry, function(err, res) {
+    if (err) {
+      t.fail(err);
+      t.end();
+    }
+
+    // add remotely
+    remoteClient.add(dn, entry, function(err, res) {
+      if (err) {
+        t.fail(err);
+        t.end();
+      }
+
+      // delete remotely
+      remoteClient.del(dn, function(err, res) {
+        if (err) {
+          t.fail(err);
+          t.end();
+        }
+        setTimeout(function(){t.end();}, 2000);
+      });
+    });
+  });
+});
+
+var localContent = [ { dn: 'o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'executor',
+    uid: 'foo' },
+  { dn: 'ou=protoss, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'protoss',
+    uid: 'foo' },
+  { dn: 'ou=zerg, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'zerg',
+    uid: 'foo' },
+  { dn: 'cn=zealot, ou=protoss, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'protoss',
+    uid: 'foo' },
+  { dn: 'cn=stalker, ou=protoss, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'protoss',
+    uid: 'foo' },
+  { dn: 'cn=colossus, ou=protoss, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'protoss',
+    uid: 'foo' },
+  { dn: 'cn=zergling, ou=zerg, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    attack: 'melee',
+    objectclass: 'zerg',
+    uid: 'foo' },
+  { dn: 'cn=roach, ou=zerg, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    attack: 'melee',
+    objectclass: 'zerg',
+    uid: 'foo' },
+  { dn: 'cn=hydralisk, ou=zerg, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    attack: 'melee',
+    objectclass: 'zerg',
+    uid: 'foo' },
+  { dn: 'cn=infestor, ou=zerg, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    attack: 'melee',
+    objectclass: 'zerg',
+    uid: 'foo' },
+  { dn: 'cn=mutalisk, ou=zerg, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    attack: 'melee',
+    objectclass: 'zerg',
+    uid: 'foo' },
+  { dn: 'cn=mothership, ou=protoss, o=yunong, cn=repl, o=somewhereovertherainbow',
+    controls: [],
+    objectclass: 'protoss' } ];
+
 test('local replication check', function(t) {
+  localContent.sort();
   var gotEntry = 0;
   var entryDns = [];
   localClient.search('o=yunong, ' + REPL_SUFFIX, {scope: 'sub'},
@@ -227,7 +359,7 @@ test('local replication check', function(t) {
       gotEntry++;
       t.ok(entry);
       t.ok(entry.object);
-      entryDns.push(entry.object.dn);
+      entryDns.push(entry.object);
     });
 
     res.on('error', function(err) {
@@ -236,8 +368,13 @@ test('local replication check', function(t) {
     });
 
     res.on('end', function(res) {
-      console.log(entryDns);
-      t.equal(gotEntry, 14);
+      t.equal(entryDns.length, 12);
+      entryDns.sort();
+      entryDns.forEach(function(element, index) {
+        var found = JSON.stringify(element);
+        var expected = JSON.stringify(localContent[index]);
+        t.equal(found, expected);
+      });
       t.end();
     });
   });

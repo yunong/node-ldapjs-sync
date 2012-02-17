@@ -59,8 +59,8 @@ var replContext;
 ///--- Tests
 
 test('setup-local', function(t) {
-  // inMemLdap.startServer({suffix: SUFFIX, port: LOCAL_PORT}, function(server) {
-    // t.ok(server);
+  inMemLdap.startServer({suffix: SUFFIX, port: LOCAL_PORT}, function(server) {
+    t.ok(server);
     localClient = ldap.createClient({
       url: LOCAL_URL,
       log4js: log4js
@@ -78,15 +78,15 @@ test('setup-local', function(t) {
         t.end();
       });
     });
-  // });
+  });
 });
 
 test('add fixtures', function(t) {
   var entry = { objectclass: 'executor', uid: 'foo' };
-  // localClient.add('o=yunong', entry, function(err, res) {
-  //   if (err) {
-  //     t.fail(err);
-  //   }
+  localClient.add('o=yunong', entry, function(err, res) {
+    if (err) {
+      t.fail(err);
+    }
 
     localClient.search('o=yunong', '(objectclass=*)', function(err, res) {
       console.log('searching locally');
@@ -107,7 +107,7 @@ test('add fixtures', function(t) {
         t.equal(entry.dn.toString(), 'o=yunong');
         // t.equal(entry.object, entry);
         console.log(entry.object);
-        t.end();
+        // t.end();
       });
 
       res.on('error', function(err) {
@@ -120,4 +120,18 @@ test('add fixtures', function(t) {
       });
     });
   });
-// });
+});
+
+test('modify fixtures', function(t) {
+  var change = new ldap.Change({
+    type: 'replace',
+    modification: new ldap.Attribute({
+      type: 'uid',
+      vals: 'bar'
+    })
+  });
+  localClient.modify('o=yunong', change, function(err, res) {
+    console.log(res);
+    t.end();
+  });
+});

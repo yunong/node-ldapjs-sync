@@ -182,7 +182,7 @@ test('test common changenumber greater than checkpoint', function(t) {
   // test changelog smaller than 100
   var changelog = {
     object: {
-      changenumber: 101
+      changenumber: 500
     }
   };
 

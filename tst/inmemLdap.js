@@ -202,6 +202,9 @@ function startServer(options, callback) {
 
     for (var i = 0; i < req.changes.length; i++) {
       mod = req.changes[i].modification;
+      console.log('modification', mod);
+      console.log('modification json', mod.json);
+      console.log('modification entry', entry);
       switch (req.changes[i].operation) {
       case 'replace':
         if (!entry[mod.type])

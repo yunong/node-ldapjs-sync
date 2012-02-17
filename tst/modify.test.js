@@ -56,6 +56,7 @@ var entryQueue;
 var url = ldap.url.parse(REMOTE_URL, true);
 
 var replContext;
+
 ///--- Tests
 
 test('setup-replcontext', function(t) {
