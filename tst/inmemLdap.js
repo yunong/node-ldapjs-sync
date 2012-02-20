@@ -86,7 +86,7 @@ function changelogHandler(req, res, next) {
       targetdn: req.dn.toString(),
       changetime: ISODateString(),
       changenumber: cn,
-      changetype: changeType,
+      changetype: changeType
     }
   };
 

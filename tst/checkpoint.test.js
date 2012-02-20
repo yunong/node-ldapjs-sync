@@ -27,7 +27,11 @@ var CHECKPOINT_OPTIONS = {
   dn: 'cn=checkpoint, o=yunong',
   url: REMOTE_URL,
   localUrl: LOCAL_URL,
-  log4js: log4js
+  log4js: log4js,
+  localClientCfg: {
+    url: LOCAL_URL,
+    log4js: this.logj4s
+  }
 };
 
 var checkpoint;
@@ -79,4 +83,10 @@ test('set/get checkpoint', function(t) {
       t.end();
     });
   });
+});
+
+test('tear-down', function(t) {
+  // time this out so loggers will flush
+  t.end();
+  setTimeout(function() {process.exit(0);}, 2000);
 });
