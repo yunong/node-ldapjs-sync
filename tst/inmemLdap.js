@@ -1,3 +1,7 @@
+/**
+ * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
+ */
+
 var ldap = require('ldapjs');
 
 var PersistentSearch = ldap.PersistentSearch;

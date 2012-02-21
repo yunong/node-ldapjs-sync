@@ -1,3 +1,7 @@
+/**
+ * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
+ */
+
 var common        = require('../lib/common');
 var test          = require('tap').test;
 var inMemLdap     = require('./inmemLdap.js');
@@ -5,8 +9,6 @@ var ReplContext   = require('../lib/replContext.js');
 var ldap          = require('ldapjs');
 var log4js        = require('log4js');
 var uuid          = require('node-uuid');
-var ldapjsRiak    = require('ldapjs-riak');
-var ldapjsSync    = require('../lib/index');
 
 ///--- Globals
 

@@ -1,11 +1,12 @@
+/**
+ * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
+ */
+
 var add         = require('../lib/add.js');
 var ldap        = require('ldapjs');
 var log4js      = require('log4js');
 var test        = require('tap').test;
 var uuid        = require('node-uuid');
-var vm          = require('vm');
-var ldapjsRiak  = require('ldapjs-riak');
-var ldapjsSync  = require('../lib/index');
 var EntryQueue  = require('../lib/entryQueue');
 var ReplContext = require('../lib/replContext');
 
@@ -243,9 +244,8 @@ test('modify', function(t) {
           t.ok(entry.attributes.length);
           t.ok(entry.object);
           t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
-          t.equal(entry.object.type, 'pets');
-          t.equal(entry.object.vals[0], 'honey badger');
-          t.equal(entry.object.vals[1], 'bear');
+          t.equal(entry.object.pets[0], 'honey badger');
+          t.equal(entry.object.pets[1], 'bear');
         });
         res.on('error', function(err) {
           t.fail(err);

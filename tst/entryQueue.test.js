@@ -1,12 +1,14 @@
-var add         = require('../lib/add.js');
-var test          = require('tap').test;
-var inMemLdap     = require('./inmemLdap.js');
+/**
+ * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
+ */
+
 var ReplContext   = require('../lib/replContext.js');
+var add           = require('../lib/add.js');
+var inMemLdap     = require('./inmemLdap.js');
 var ldap          = require('ldapjs');
 var log4js        = require('log4js');
+var test          = require('tap').test;
 var uuid          = require('node-uuid');
-var ldapjsRiak    = require('ldapjs-riak');
-var ldapjsSync    = require('../lib/index');
 
 ///--- Globals
 
@@ -19,6 +21,7 @@ var REMOTE_URL    = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
 var LOCAL_PORT    = 23456;
 var LOCAL_URL     = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
 
+var REPL_SUFFIX = 'cn=repl, o=yunong';
 var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
   type: '2.16.840.1.113730.3.4.3',
   value: {
@@ -47,7 +50,7 @@ var REPL_CONTEXT_OPTIONS = {
   url: REMOTE_URL,
   localUrl: LOCAL_URL,
   checkpointDn: SUFFIX,
-  replSuffix: 'cn=repl, o=yunong'
+  replSuffix: REPL_SUFFIX
 };
 
 ///--- Tests
@@ -227,13 +230,13 @@ test('push real add changelog', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.localClient.search('o=yunong', {filter: '(uid=*)'},
+    replContext.localClient.search('o=yunong, ' + REPL_SUFFIX, {filter: '(uid=*)'},
                                    function(err, res) {
       t.ok(res);
       res.on('searchEntry', function(entry) {
         t.ok(entry);
         t.ok(entry.object);
-        t.equal(entry.dn.toString(), 'o=yunong');
+        t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
       });
 
       res.on('error', function(err) {
@@ -331,7 +334,7 @@ test('push delete changelog dn doesn\'t match', function(t) {
 
   entryQueue.on('popped', function() {
     replContext.checkpoint.getCheckpoint(function(cp) {
-      t.equal(cp, changelog.object.changenumber);
+      t.equal(true, cp == changelog.object.changenumber);
       t.end();
     });
   });
@@ -354,7 +357,7 @@ test('push delete changelog filter doesn\'t match', function(t) {
 
     entryQueue.on('popped', function() {
       replContext.checkpoint.getCheckpoint(function(cp) {
-        t.equal(cp, changelog.object.changenumber);
+        t.equal(true, cp == changelog.object.changenumber);
         t.end();
       });
     });
@@ -377,7 +380,8 @@ test('push delete changelog', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.localClient.search('cn=supson, o=yunong', {filter: '(uid=*)'},
+    replContext.localClient.search('cn=supson, o=yunong, ' + REPL_SUFFIX,
+                                   {filter: '(uid=*)'},
                                    function(err, res) {
       if (err) {
         t.fail(err);

@@ -1,3 +1,7 @@
+/**
+ * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
+ */
+
 var mock        = require('nodemock');
 var modify      = require('../lib/modify');
 var common      = require('../lib/common');
@@ -5,8 +9,6 @@ var ldap        = require('ldapjs');
 var log4js      = require('log4js');
 var test        = require('tap').test;
 var uuid        = require('node-uuid');
-var ldapjsRiak  = require('ldapjs-riak');
-var ldapjsSync  = require('../lib/index');
 var EntryQueue  = require('../lib/entryQueue');
 var ReplContext = require('../lib/replContext');
 
