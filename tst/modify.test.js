@@ -2,26 +2,26 @@
  * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
  */
 
-var mock        = require('nodemock');
-var modify      = require('../lib/modify');
-var common      = require('../lib/common');
-var ldap        = require('ldapjs');
-var log4js      = require('log4js');
-var test        = require('tap').test;
-var uuid        = require('node-uuid');
-var EntryQueue  = require('../lib/entryQueue');
+var mock = require('nodemock');
+var modify = require('../lib/modify');
+var common = require('../lib/common');
+var ldap = require('ldapjs');
+var log4js = require('log4js');
+var test = require('tap').test;
+var uuid = require('node-uuid');
+var EntryQueue = require('../lib/entryQueue');
 var ReplContext = require('../lib/replContext');
 
 ///--- Globals
-var REMOTE_URL  ='ldap://127.0.0.1:' + 23444 + '/' +
+var REMOTE_URL = 'ldap://127.0.0.1:' + 23444 + '/' +
                  'o=yunong' + '??sub?(objectclass=*)';
-var SUFFIX        = 'o=yunong';
-var LOCAL_SUFFIX  = 'o=somewhereovertherainbow';
-var REPL_SUFFIX   = 'cn=repl, ' + LOCAL_SUFFIX;
-var SOCKET        = '/tmp/.' + uuid();
-var REMOTE_PORT   = 23364;
+var SUFFIX = 'o=yunong';
+var LOCAL_SUFFIX = 'o=somewhereovertherainbow';
+var REPL_SUFFIX = 'cn=repl, ' + LOCAL_SUFFIX;
+var SOCKET = '/tmp/.' + uuid();
+var REMOTE_PORT = 23364;
 var TOTAL_ENTRIES = 5;
-var REMOTE_URL    ='ldap://127.0.0.1:' + REMOTE_PORT + '/' +
+var REMOTE_URL = 'ldap://127.0.0.1:' + REMOTE_PORT + '/' +
                     SUFFIX + '??sub?(uid=*)';
 
 var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
@@ -82,13 +82,13 @@ test('determine modify condition 1', function(t) {
     object: {
       targetdn: 'cn=foo, o=yunong',
       entry: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         uid: uuid(),
         pets: ['honey badger', 'bear']
       },
       changes: [{
         operation: 'add',
-        modification:{
+        modification: {
           type: 'pets',
           vals: ['honey badger', 'bear']
         }
@@ -96,7 +96,7 @@ test('determine modify condition 1', function(t) {
     },
     localEntry: {
       object: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         uid: uuid()
       }
     },
@@ -106,7 +106,7 @@ test('determine modify condition 1', function(t) {
   // determine modify should call mod
   replContext.localClient = mock.mock('modify').takes(
     changelog.object.targetdn, changelog.object.changes,
-    function(){}).calls(2, [null, {}]);
+    function() {}).calls(2, [null, {}]);
 
   modify.determineModify(changelog, replContext, function() {
     t.equal(replContext.localClient.assert(), true);
@@ -123,12 +123,12 @@ test('determine modify condition 2', function(t) {
     object: {
       targetdn: 'cn=foo, o=yunong',
       entry: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         pets: ['honey badger', 'bear']
       },
       changes: [{
         operation: 'add',
-        modification:{
+        modification: {
           type: 'pets',
           vals: ['honey badger', 'bear']
         }
@@ -136,7 +136,7 @@ test('determine modify condition 2', function(t) {
     },
     localEntry: {
       object: {
-        objectclass: [ 'user' ]
+        objectclass: ['user']
       }
     },
     localDn: 'cn=foo, o=yunong'
@@ -145,20 +145,21 @@ test('determine modify condition 2', function(t) {
   // determine modify should not call mod
   replContext.localClient = mock.mock('modify').takes(
     changelog.object.targetdn, changelog.object.changes,
-    function(){}).calls(2, [null, {}]);
+    function() {}).calls(2, [null, {}]);
 
   modify.determineModify(changelog, replContext, function() {
     t.equal(replContext.localClient.assert(), false);
 
     // determine modify should not call delete
     replContext.localClient = mock.mock('del').takes(
-      changelog.object.targetdn, function(){}).calls(1, [null, {}]);
+      changelog.object.targetdn, function() {}).calls(1, [null, {}]);
 
     modify.determineModify(changelog, replContext, function() {
       t.equal(replContext.localClient.assert(), false);
 
       // determine modify should not call add
-      replContext.localClient = mock.mock('add').takes(changelog.object.targetdn, changelog.object.entry, function(){}).calls(2, [null, {}]);
+      replContext.localClient = mock.mock('add').takes(changelog.object.
+        targetdn, changelog.object.entry, function() {}).calls(2, [null, {}]);
 
       modify.determineModify(changelog, replContext, function() {
         t.equal(replContext.localClient.assert(), false);
@@ -176,12 +177,12 @@ test('determine modify condition 3', function(t) {
     object: {
       targetdn: 'cn=foo, o=yunong',
       entry: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         pets: ['honey badger', 'bear']
       },
       changes: [{
         operation: 'add',
-        modification:{
+        modification: {
           type: 'pets',
           vals: ['honey badger', 'bear']
         }
@@ -194,7 +195,7 @@ test('determine modify condition 3', function(t) {
     },
     localEntry: {
       object: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         uid: uuid()
       }
     },
@@ -203,7 +204,7 @@ test('determine modify condition 3', function(t) {
 
   // determine modify should call delete
   replContext.localClient = mock.mock('del').takes(
-    changelog.object.targetdn, function(){}).calls(1, [null, {}]);
+    changelog.object.targetdn, function() {}).calls(1, [null, {}]);
 
   modify.determineModify(changelog, replContext, function() {
     t.equal(replContext.localClient.assert(), true);
@@ -219,13 +220,13 @@ test('determine modify condition 4', function(t) {
     object: {
       targetdn: 'cn=foo, o=yunong',
       entry: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         pets: ['honey badger', 'bear'],
         uid: uuid()
       },
       changes: [{
         operation: 'add',
-        modification:{
+        modification: {
           type: 'uid',
           vals: uuid()
         }
@@ -233,7 +234,7 @@ test('determine modify condition 4', function(t) {
     },
     localEntry: {
       object: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         pets: ['honey badger', 'bear']
       }
     },
@@ -242,7 +243,7 @@ test('determine modify condition 4', function(t) {
 
   replContext.localClient = mock.mock('modify').takes(
     changelog.object.targetdn, changelog.object.changes,
-    function(){}).calls(2, [null, {}]);
+    function() {}).calls(2, [null, {}]);
 
   // should call modify
   modify.determineModify(changelog, replContext, function() {
@@ -260,13 +261,13 @@ test('determine modify condition 5', function(t) {
     object: {
       targetdn: 'cn=foo, o=yunong',
       entry: {
-        objectclass: [ 'user' ],
+        objectclass: ['user'],
         uid: uuid(),
         pets: ['honey badger', 'bear']
       },
       changes: [{
         operation: 'add',
-        modification:{
+        modification: {
           type: 'pets',
           vals: ['honey badger', 'bear']
         }
@@ -276,7 +277,7 @@ test('determine modify condition 5', function(t) {
   };
 
   replContext.localClient = mock.mock('add').takes(changelog.object.targetdn,
-    changelog.object.entry, function(){}).calls(2, [null, {}]);
+    changelog.object.entry, function() {}).calls(2, [null, {}]);
 
   modify.determineModify(changelog, replContext, function() {
     t.equal(replContext.localClient.assert(), true);

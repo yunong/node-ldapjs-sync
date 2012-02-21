@@ -2,24 +2,24 @@
  * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
  */
 
-var common        = require('../lib/common');
-var test          = require('tap').test;
-var inMemLdap     = require('./inmemLdap.js');
-var ReplContext   = require('../lib/replContext.js');
-var ldap          = require('ldapjs');
-var log4js        = require('log4js');
-var uuid          = require('node-uuid');
+var common = require('../lib/common');
+var test = require('tap').test;
+var inMemLdap = require('./inmemLdap.js');
+var ReplContext = require('../lib/replContext.js');
+var ldap = require('ldapjs');
+var log4js = require('log4js');
+var uuid = require('node-uuid');
 
 ///--- Globals
 
-var SUFFIX        = 'o=yunong';
-var REMOTE_PORT   = 23364;
+var SUFFIX = 'o=yunong';
+var REMOTE_PORT = 23364;
 var TOTAL_ENTRIES = 5;
-var REMOTE_URL    = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
+var REMOTE_URL = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
                     SUFFIX + '??sub?(uid=*)';
 
-var LOCAL_PORT    = 23456;
-var LOCAL_URL     = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
+var LOCAL_PORT = 23456;
+var LOCAL_URL = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
 
 var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
   type: '2.16.840.1.113730.3.4.3',
@@ -84,15 +84,15 @@ test('setup-remote', function(t) {
     setsid: false
   });
 
-  remoteLdap.stdout.on('data', function (data) {
+  remoteLdap.stdout.on('data', function(data) {
     console.log('remote stdout: ' + data);
   });
 
-  remoteLdap.stderr.on('data', function (data) {
+  remoteLdap.stderr.on('data', function(data) {
     console.log('remote stderr: ' + data);
   });
 
-  remoteLdap.on('exit', function (code) {
+  remoteLdap.on('exit', function(code) {
     console.log('remote child process exited with code ' + code);
   });
 

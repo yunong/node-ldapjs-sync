@@ -2,24 +2,24 @@
  * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
  */
 
-var ReplContext   = require('../lib/replContext.js');
-var add           = require('../lib/add.js');
-var inMemLdap     = require('./inmemLdap.js');
-var ldap          = require('ldapjs');
-var log4js        = require('log4js');
-var test          = require('tap').test;
-var uuid          = require('node-uuid');
+var ReplContext = require('../lib/replContext.js');
+var add = require('../lib/add.js');
+var inMemLdap = require('./inmemLdap.js');
+var ldap = require('ldapjs');
+var log4js = require('log4js');
+var test = require('tap').test;
+var uuid = require('node-uuid');
 
 ///--- Globals
 
-var SUFFIX        = 'o=yunong';
-var REMOTE_PORT   = 23364;
+var SUFFIX = 'o=yunong';
+var REMOTE_PORT = 23364;
 var TOTAL_ENTRIES = 5;
-var REMOTE_URL    = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
+var REMOTE_URL = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
                     SUFFIX + '??sub?(uid=*)';
 
-var LOCAL_PORT    = 23456;
-var LOCAL_URL     = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
+var LOCAL_PORT = 23456;
+var LOCAL_URL = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
 
 var REPL_SUFFIX = 'cn=repl, o=yunong';
 var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
@@ -85,15 +85,15 @@ test('setup-remote', function(t) {
     setsid: false
   });
 
-  remoteLdap.stdout.on('data', function (data) {
+  remoteLdap.stdout.on('data', function(data) {
     console.log('remote stdout: ' + data);
   });
 
-  remoteLdap.stderr.on('data', function (data) {
+  remoteLdap.stderr.on('data', function(data) {
     console.log('remote stderr: ' + data);
   });
 
-  remoteLdap.on('exit', function (code) {
+  remoteLdap.on('exit', function(code) {
     console.log('remote child process exited with code ' + code);
   });
 
@@ -175,7 +175,7 @@ test('push with handler chain', function(t) {
   var invocations = 0;
   var entries = 0;
   var func1 = function(changelog, replContext, next) {
-    if(!invoked2) {
+    if (!invoked2) {
       invoked1 = true;
     }
     t.ok(changelog);
@@ -221,8 +221,8 @@ test('push real add changelog', function(t) {
       changenumber: '1326414273442',
       changetype: 'add',
       changes: {
-        objectclass: [ 'organizationalUnit' ],
-        ou: [ 'users' ],
+        objectclass: ['organizationalUnit'],
+        ou: ['users'],
         uid: uuid()
       },
       objectclass: 'changeLogEntry'
@@ -230,7 +230,8 @@ test('push real add changelog', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.localClient.search('o=yunong, ' + REPL_SUFFIX, {filter: '(uid=*)'},
+    replContext.localClient.search('o=yunong, ' + REPL_SUFFIX,
+                                   {filter: '(uid=*)'},
                                    function(err, res) {
       t.ok(res);
       res.on('searchEntry', function(entry) {
@@ -264,9 +265,9 @@ test('push add changelog with unmatched filter', function(t) {
       changenumber: '1326414273443',
       changetype: 'add',
       changes: {
-        objectclass: [ 'organizationalUnit' ],
-        ou: [ 'users' ],
-        l: [ 'somewhere' ]
+        objectclass: ['organizationalUnit'],
+        ou: ['users'],
+        l: ['somewhere']
       },
       objectclass: 'changeLogEntry'
     }
@@ -291,7 +292,7 @@ test('push add changelog with unmatched filter', function(t) {
 });
 
 test('setup child entry', function(t) {
-  localClient.add('cn=supsons, o=yunong', { objectclass: [ 'user' ] },
+  localClient.add('cn=supsons, o=yunong', { objectclass: ['user'] },
                   function(err, res) {
     if (err) {
       t.fail(err);
@@ -304,7 +305,7 @@ test('setup child entry', function(t) {
 
 test('setup child entry', function(t) {
   var entry = {
-    objectclass: [ 'user' ],
+    objectclass: ['user'],
     uid: uuid()
   };
 

@@ -329,7 +329,7 @@ function startServer(options, callback) {
     console.log('request scope', req.scope);
     switch (req.scope) {
     case 'base':
-      if (!changelog[dn]){
+      if (!changelog[dn]) {
         console.log('changelog %s dne', dn);
         return next(new ldap.NoSuchObjectError(dn));
       }

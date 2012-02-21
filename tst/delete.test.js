@@ -2,30 +2,30 @@
  * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
  */
 
-var add         = require('../lib/add');
-var common      = require('../lib/common');
-var del         = require('../lib/delete');
-var ldap        = require('ldapjs');
-var log4js      = require('log4js');
-var test        = require('tap').test;
-var uuid        = require('node-uuid');
-var EntryQueue  = require('../lib/entryQueue');
+var add = require('../lib/add');
+var common = require('../lib/common');
+var del = require('../lib/delete');
+var ldap = require('ldapjs');
+var log4js = require('log4js');
+var test = require('tap').test;
+var uuid = require('node-uuid');
+var EntryQueue = require('../lib/entryQueue');
 var ReplContext = require('../lib/replContext');
 
-var inMemLdap   = require('./inmemLdap');
+var inMemLdap = require('./inmemLdap');
 
 ///--- Globals
-var SUFFIX        = 'o=yunong';
-var LOCAL_SUFFIX  = 'o=somewhereovertherainbow';
-var REPL_SUFFIX   = 'cn=repl, ' + LOCAL_SUFFIX;
-var SOCKET        = '/tmp/.' + uuid();
-var REMOTE_PORT   = 23364;
+var SUFFIX = 'o=yunong';
+var LOCAL_SUFFIX = 'o=somewhereovertherainbow';
+var REPL_SUFFIX = 'cn=repl, ' + LOCAL_SUFFIX;
+var SOCKET = '/tmp/.' + uuid();
+var REMOTE_PORT = 23364;
 var TOTAL_ENTRIES = 5;
-var REMOTE_URL    = 'ldap://cn=root:secret@0.0.0.0:' + REMOTE_PORT + '/' +
+var REMOTE_URL = 'ldap://cn=root:secret@0.0.0.0:' + REMOTE_PORT + '/' +
                     SUFFIX + '??sub?(uid=*)';
 
-var LOCAL_PORT    = 23456;
-var LOCAL_URL     = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
+var LOCAL_PORT = 23456;
+var LOCAL_URL = 'ldap://cn=root:secret@localhost:' + LOCAL_PORT;
 
 var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
   type: '2.16.840.1.113730.3.4.3',
@@ -117,15 +117,15 @@ test('setup-remote', function(t) {
     setsid: false
   });
 
-  remoteLdap.stdout.on('data', function (data) {
+  remoteLdap.stdout.on('data', function(data) {
     console.log('remote_stdout: ' + data);
   });
 
-  remoteLdap.stderr.on('data', function (data) {
+  remoteLdap.stderr.on('data', function(data) {
     console.log('remote_stderr: ' + data);
   });
 
-  remoteLdap.on('exit', function (code) {
+  remoteLdap.on('exit', function(code) {
     console.log('remote_child process exited with code ' + code);
   });
 
@@ -171,7 +171,7 @@ test('setup-replcontext', function(t) {
     // we are technically good to go here after the init event, however, the
     // changelog psearch is asynchronous, so we have to wait here a bit while
     // that finishes. 1.5 seconds ought to do it.
-    setTimeout(function(){ t.end(); }, 1500);
+    setTimeout(function() { t.end(); }, 1500);
   });
 });
 
@@ -185,8 +185,8 @@ test('add entry to datastore', function(t) {
       changenumber: '1326414273442',
       changetype: 'add',
       changes: {
-        objectclass: [ 'organizationalUnit' ],
-        ou: [ 'users' ],
+        objectclass: ['organizationalUnit'],
+        ou: ['users'],
         uid: 'foo'
       },
       objectclass: 'changeLogEntry'
