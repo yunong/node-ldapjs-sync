@@ -221,14 +221,14 @@ test('determine modify condition 4', function(t) {
       targetdn: 'cn=foo, o=yunong',
       entry: {
         objectclass: ['user'],
-        pets: ['honey badger', 'bear'],
-        uid: uuid()
+        uid: 'foo',
+        pets: ['honey badger', 'bear']
       },
       changes: [{
         operation: 'add',
         modification: {
           type: 'uid',
-          vals: uuid()
+          vals: ['foo']
         }
       }]
     },

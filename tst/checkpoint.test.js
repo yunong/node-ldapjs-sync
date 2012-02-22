@@ -73,14 +73,14 @@ test('setup-checkpoint', function(t) {
 });
 
 test('set/get checkpoint', function(t) {
-  checkpoint.setCheckpoint(100, function(err, res) {
+  checkpoint.set(100, function(err, res) {
     if (err) {
       t.fail(err);
       t.end();
     }
     t.ok(res);
 
-    checkpoint.getCheckpoint(function(cn) {
+    checkpoint.get(function(cn) {
       t.equal((cn == 100), true);
       t.end();
     });

@@ -201,7 +201,7 @@ test('add mismatched filter entry changelotToEntry', function(t) {
   // oh well.
   setTimeout(
     function() {
-      replContext.checkpoint.getCheckpoint(function(cp) {
+      replContext.checkpoint.get(function(cp) {
           t.equal(true, cp == changelog.object.changenumber);
           t.end();
         });
@@ -238,7 +238,7 @@ test('add mismatched dn entry changelotToEntry', function(t) {
   // oh well.
   setTimeout(
     function() {
-      replContext.checkpoint.getCheckpoint(function(cp) {
+      replContext.checkpoint.get(function(cp) {
           t.equal(true, cp == changelog.object.changenumber);
           t.end();
         });

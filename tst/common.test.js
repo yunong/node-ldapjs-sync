@@ -142,7 +142,7 @@ test('test common writeCheckpoint', function(t) {
   };
 
   common.writeCheckpoint(changelog, replContext, function() {
-    replContext.checkpoint.getCheckpoint(function(cn) {
+    replContext.checkpoint.get(function(cn) {
         t.equal((100 == cn), true);
         t.end();
     });

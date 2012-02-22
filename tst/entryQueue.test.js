@@ -334,7 +334,7 @@ test('push delete changelog dn doesn\'t match', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.checkpoint.getCheckpoint(function(cp) {
+    replContext.checkpoint.get(function(cp) {
       t.equal(true, cp == changelog.object.changenumber);
       t.end();
     });
@@ -357,7 +357,7 @@ test('push delete changelog filter doesn\'t match', function(t) {
     };
 
     entryQueue.on('popped', function() {
-      replContext.checkpoint.getCheckpoint(function(cp) {
+      replContext.checkpoint.get(function(cp) {
         t.equal(true, cp == changelog.object.changenumber);
         t.end();
       });
