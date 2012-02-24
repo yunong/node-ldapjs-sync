@@ -5,8 +5,8 @@
 var mock = require('nodemock');
 var modify = require('../lib/modify');
 var common = require('../lib/common');
+var bunyan = require('bunyan');
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
@@ -34,7 +34,7 @@ var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
 });
 
 var REPL_CONTEXT_OPTIONS = {
-  log4js: log4js,
+  log: log,
   url: REMOTE_URL,
   checkpointBucket: uuid()
 };
@@ -44,6 +44,13 @@ var suffix = {
   o: SUFFIX.split('=')[1],
   uid: uuid()
 };
+
+var log = new bunyan({
+    name: 'crud-integ-test',
+    stream: process.stdout,
+    level: 'trace',
+    src: true
+});
 
 var localBackend;
 var localClient = {};
@@ -64,8 +71,7 @@ var replContext;
 test('setup-replcontext', function(t) {
   replContext = {
     url: ldap.url.parse(REMOTE_URL, true),
-    log: log4js.getLogger('modify-test'),
-    log4js: log4js,
+    log: log,
     replSuffix: REPL_SUFFIX
   };
 

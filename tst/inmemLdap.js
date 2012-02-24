@@ -4,7 +4,8 @@
 
 var ldap = require('ldapjs');
 
-var PersistentSearch = ldap.PersistentSearch;
+var PersistentSearch = ldap.PersistentSearchCache;
+
 ///--- Globals
 
 var SUFFIX;
@@ -13,8 +14,9 @@ var server = ldap.createServer();
 var changelog = {};
 var changenumber = 0;
 var parseDN = ldap.parseDN;
-var PS = new ldap.PersistentSearch();
+var PS = new PersistentSearch();
 var CHANGELOG_DN = parseDN('cn=changelog');
+
 ///--- Shared handlers
 
 function authorize(req, res, next) {
@@ -46,11 +48,10 @@ function updatePersistentSearchClients(req, res, next) {
   // if so, handle differently
   // console.log("PS CLIENTS", PS.clientList[0]);
   PS.clientList.forEach(function(client) {
-    // console.log('PS', client);
     // see if the change type of the PS request is the same as the current req
-    if (PersistentSearch.checkChangeType(client.req, req.type)) {
+    if (ldap.persistentSearch.checkChangeType(client.req, req.type)) {
       var control =
-        PersistentSearch.getEntryChangeNotificationControl(client.req,
+        ldap.persistentSearch.getEntryChangeNotificationControl(client.req,
                                                            res.changelog);
       var entry;
       if (client.req.dn.equals(CHANGELOG_DN)) {

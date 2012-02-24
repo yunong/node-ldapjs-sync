@@ -3,8 +3,8 @@
  */
 
 var add = require('../lib/add.js');
+var bunyan = require('bunyan');
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var vm = require('vm');
@@ -24,6 +24,13 @@ var REMOTE_URL = 'ldap://cn=root:secret@0.0.0.0:' + REMOTE_PORT + '/' +
 var LOCAL_PORT = 23456;
 var LOCAL_URL = 'ldap://localhost:' + LOCAL_PORT;
 
+var log = new bunyan({
+    name: 'crud-integ-test',
+    stream: process.stdout,
+    level: 'trace',
+    src: true
+});
+
 var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
   type: '2.16.840.1.113730.3.4.3',
   value: {
@@ -34,7 +41,7 @@ var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
 });
 
 var REPL_CONTEXT_OPTIONS = {
-  log4js: log4js,
+  log: log,
   url: REMOTE_URL,
   checkpointBucket: uuid()
 };
@@ -65,7 +72,7 @@ test('setup-local', function(t) {
     t.ok(server);
     localClient = ldap.createClient({
       url: LOCAL_URL,
-      log4js: log4js
+      log: log
     });
 
     localClient.once('connect', function(id) {

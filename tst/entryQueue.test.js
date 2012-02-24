@@ -4,9 +4,9 @@
 
 var ReplContext = require('../lib/replContext.js');
 var add = require('../lib/add.js');
+var bunyan = require('bunyan');
 var inMemLdap = require('./inmemLdap.js');
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 
@@ -31,6 +31,13 @@ var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
   }
 });
 
+var log = new bunyan({
+    name: 'crud-integ-test',
+    stream: process.stdout,
+    level: 'trace',
+    src: true
+});
+
 var suffix = {
   objectClass: ['top', 'organization'],
   o: SUFFIX.split('=')[1],
@@ -46,7 +53,7 @@ var remoteClient;
 var remoteLdap;
 
 var REPL_CONTEXT_OPTIONS = {
-  log4js: log4js,
+  log: log,
   url: REMOTE_URL,
   localUrl: LOCAL_URL,
   checkpointDn: SUFFIX,
@@ -60,7 +67,7 @@ test('setup-local', function(t) {
     t.ok(server);
     localClient = ldap.createClient({
       url: LOCAL_URL,
-      log4js: log4js
+      log: log
     });
     localClient.once('connect', function(id) {
       t.ok(id);
@@ -104,7 +111,7 @@ test('setup-remote', function(t) {
 test('setup-remote-client', function(t) {
   remoteClient = ldap.createClient({
     url: REMOTE_URL,
-    log4js: log4js
+    log: log
   });
 
   remoteClient.once('connect', function(id) {

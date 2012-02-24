@@ -3,8 +3,8 @@
  */
 
 var add = require('../lib/add.js');
+var bunyan = require('bunyan');
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
@@ -34,8 +34,15 @@ var ALL_CHANGES_CTRL = new ldap.PersistentSearchControl({
   }
 });
 
+var log = new bunyan({
+    name: 'crud-integ-test',
+    stream: process.stdout,
+    level: 'trace',
+    src: true
+  });
+
 var REPL_CONTEXT_OPTIONS = {
-  log4js: log4js,
+  log: log,
   url: REMOTE_URL,
   localUrl: LOCAL_URL,
   checkpointDn: LOCAL_SUFFIX,
@@ -69,13 +76,18 @@ test('setup-local', function(t) {
     t.ok(server);
     localClient = ldap.createClient({
       url: LOCAL_URL,
-      log4js: log4js
+      log: log
+    });
+
+    localClient.on('error', function(err) {
+      t.fail(err);
+      t.end();
     });
 
     localClient.once('connect', function(id) {
       t.ok(id);
       t.ok(localClient);
-      console.log('local client connected');
+      log.info('local client connected');
       localClient.bind('cn=root', 'secret', function(err, res) {
         if (err) {
           t.fail(err);
@@ -116,15 +128,15 @@ test('setup-remote', function(t) {
   });
 
   remoteLdap.stdout.on('data', function(data) {
-    console.log('remote_stdout: ' + data);
+    console.info('remote_stdout: ' + data);
   });
 
   remoteLdap.stderr.on('data', function(data) {
-    console.log('remote_stderr: ' + data);
+    console.info('remote_stderr: ' + data);
   });
 
   remoteLdap.on('exit', function(code) {
-    console.log('remote_child process exited with code ' + code);
+    console.info('remote_child process exited with code ' + code);
   });
 
   t.ok(remoteLdap);
@@ -134,13 +146,13 @@ test('setup-remote', function(t) {
 test('setup-remote-client', function(t) {
   remoteClient = ldap.createClient({
     url: REMOTE_URL,
-    log4js: log4js
+    log: log
   });
 
   remoteClient.once('connect', function(id) {
     t.ok(id);
     t.ok(remoteClient);
-    console.log('remote client connected');
+    log.info('remote client connected');
     remoteClient.bind('cn=root', 'secret', function(err, res) {
       if (err) {
         t.fail(err);
@@ -172,7 +184,6 @@ test('setup-replcontext', function(t) {
     setTimeout(function() { t.end(); }, 1500);
   });
 });
-
 test('add mismatched filter entry changelotToEntry', function(t) {
   var changelog = {
     object: {
