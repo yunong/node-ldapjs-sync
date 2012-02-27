@@ -40,6 +40,11 @@ var CHECKPOINT_OPTIONS = {
   localClientCfg: {
     url: LOCAL_URL,
     log: log
+  },
+  poolCfg: {
+    max: 10,
+    idleTimeoutMillis: 30000,
+    log: log
   }
 };
 
