@@ -1,87 +1,103 @@
-# Joyent Engineering Guide
+# About
+[ldapjs-sync](https://github.com/yunong/node-ldapjs-sync) is a replication
+framework for [ldapjs](https://github.com/mcavage/node-ldapjs). It's based 
+loosely on the ldap persistent search
+[rfc](http://tools.ietf.org/id/draft-ietf-ldapext-psearch-03.txt).
 
-Repository: <git@git.joyent.com:eng.git>
-Browsing: <https://mo.joyent.com/eng>
-Who: Trent Mick, Dave Pacheco
-Docs: <https://head.no.de/docs/eng>
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/TOOLS>
+# Design
 
+It's assumed that the reader is familiar with ldap, ldap changelogs, and ldap persistent
+search. If not, take a look at the [ldapjs guide](http://ldapjs.org/guide.html) first.
 
-# Overview
+Given a master ldap server A, and a slave ldap server B, replication from A to B is
+performed as follows (at a very high level):
 
-This repo serves two purposes: (1) It defines the guidelines and best
-practices for Joyent engineering work (this is the primary goal), and (2) it
-also provides boilerplate for an SDC project repo, giving you a starting
-point for many of the suggestion practices defined in the guidelines. This is
-especially true for node.js-based REST API projects.
+1. B gets changes from A by searching A for changelogs.
+2. B applies the changelogs from A.
 
-Start with the guidelines: <https://head.no.de/docs/eng>
+# Requirements
 
+## Transactions
 
-# Repository
+## Persistent Search
 
-    deps/           Git submodules and/or commited 3rd-party deps should go
-                    here. See "node_modules/" for node.js deps.
-    docs/           Project docs (restdown)
-    lib/            Source files.
-    node_modules/   Node.js deps, either populated at build time or commited.
-                    See Managing Dependencies.
-    pkg/            Package lifecycle scripts
-    smf/manifests   SMF manifests
-    smf/methods     SMF method scripts
-    test/           Test suite (using node-tap)
-    tools/          Miscellaneous dev/upgrade/deployment tools and data.
-    Makefile
-    package.json    npm module info (holds the project version)
-    README.md
+## Changelogs
 
+# Usage
+    var ldapjs-sync = require('ldapjs-sync');
 
-# Development
+    var Replicator = new ldapjs-sync();
+    var options = {
 
-To run the boilerplate API server:
+    };
+    Replicator.on('init', function() {
+      console.log('replication has started');
+    });
 
-    git clone git@git.joyent.com:eng.git
-    cd eng
-    git submodule update --init
-    make all
-    node server.js
+    Replicator.init(options);
 
-To update the guidelines, edit "docs/index.restdown" and run `make docs`
-to update "docs/index.html".
+You can also run the replicator from the cmd line
 
-Before commiting/pushing run `make prepush` and, if possible, get a code
-review.
+    $ ./bin/main.js -f ../cfg/config.json
 
+# Configuration
 
+    Replicator() accepts an options object with these members:
+        url: the ldap url of the remote master server. (string)
+        localUrl : the ldap url of the local slave server. (string)
+        log : the bunyan log object. (bunyan log object)
+        checkpointDn : the root dn where the checkpoint is stored. (string)
+        replSuffix : the root dn where the replicated entries are stored on the slave. (string)
+        localPoolCfg: the node-pool config for the local client. (object, optional)
+        remotePoolCfg: the node-pool config for the remote client. (object, optional)
 
-# Testing
+## Replication URLs
 
-    make test
+[ldap urls](http://www.ietf.org/rfc/rfc2255.txt) are used to specify the remote ldap server with which to replicate from. Specifically the following url fields are used for replication. Given a url:
+    ldap://binddn:pw@addr:port/dn??scope?filter
 
-If you project has setup steps necessary for testing, then describe those
-here.
+    binddn : bind DN.
+    pw : bind password.
+    addr : server address.
+    port : server port.
+    dn : root dn to replicate from.
+    scope : one of "base" / "one" / "sub". (most cases sub would be used)
+    filter : filter used for the replicated entries.
 
+The dn and filter fields allow the replication of only a portion of a ldap directory. 
 
+## Pool Configs
 
-# Other Sections Here
+Replication utilizes the [node-pool](https://github.com/coopernurse/node-pool) lib for connection pooling. They can be
+configured per the node-pool docs.
 
-Add other sections to your README as necessary. E.g. Running a demo, adding
-development data.
+## Checkpoint DN
 
+The replicator 
 
+# Installation
 
-# TODO
+    $ npm install ldapjs-sync
 
-Remaining work for this repo:
+## License
 
-- any "TODO" or "XXX" in the repo
-- review from engineering group
-- [Trent] Finish the restdown "public" dir and other work as discussed with
-  Philip. `git rm docs/media/css`
-- Give a little starter guide on using this repo as a starter template for the
-  new repos (for NAPI, CNAPI, FWAPI, DAPI, Workflow API, ZAPI). Include
-  getting on mo.joyent.com and head.no.de/docs for this.
-- Should we spec JIRA projects for the new APIs?
-- Add the node/npm local build support a la Amon and DSAPI. I.e. deps/node
-  and deps/npm git submodules and build handling in the Makefile.
+The MIT License (MIT)
+Copyright (c) 2012 Yunong Xiao
 
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
