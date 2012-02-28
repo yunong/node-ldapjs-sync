@@ -173,8 +173,8 @@ test('setup-replcontext', function(t) {
     t.ok(replContext);
     t.ok(replContext.checkpoint);
     t.ok(replContext.entryQueue);
-    t.ok(replContext.localClient);
-    t.ok(replContext.remoteClient);
+    t.ok(replContext.localPool);
+    t.ok(replContext.remotePool);
     t.ok(replContext.url);
     t.ok(replContext.entryQueue);
     t.ok(replContext.replSuffix);
@@ -211,7 +211,7 @@ test('add entry to datastore', function(t) {
   };
 
   add.add(changelog, replContext, function() {
-    replContext.localClient.search(changelog.localDn,
+    localClient.search(changelog.localDn,
                                    function(err, res) {
       t.ok(res);
       t.end();
@@ -312,7 +312,7 @@ test('determineDelete entry matches', function(t) {
         filter: '(uid=*)'
       };
       // entry should be deleted
-      replContext.localClient.search(changelog.localDn, opts,
+      localClient.search(changelog.localDn, opts,
                                      function(err, res) {
         var retreived = false;
         if (err) {
@@ -363,7 +363,7 @@ test('determineDelete entry does not match', function(t) {
         filter: '(l=*)'
       };
       // entry should not be deleted as it lacks the uid attr
-      replContext.localClient.search(changelog.localDn, opts,
+      localClient.search(changelog.localDn, opts,
                                      function(err, res) {
         var retrieved = false;
 

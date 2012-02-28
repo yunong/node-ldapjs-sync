@@ -129,16 +129,19 @@ test('setup-replcontext', function(t) {
     t.ok(replContext);
     t.ok(replContext.checkpoint);
     t.ok(replContext.entryQueue);
-    t.ok(replContext.localClient);
-    t.ok(replContext.remoteClient);
+    t.ok(replContext.localPool);
+    t.ok(replContext.remotePool);
     t.ok(replContext.url);
     t.ok(replContext.entryQueue);
+    t.ok(replContext.replSuffix);
     entryQueue = replContext.entryQueue;
-    // wait before we end because the search connection is just getting started
-    // otherwise the test can't shut down cleanly
-    setTimeout(function() {t.end();}, 2000);
+    // we are technically good to go here after the init event, however, the
+    // changelog psearch is asynchronous, so we have to wait here a bit while
+    // that finishes. 1.5 seconds ought to do it.
+    setTimeout(function() { t.end(); }, 1500);
   });
 });
+
 
 test('push event', function(t) {
   var entry = {
@@ -237,7 +240,7 @@ test('push real add changelog', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.localClient.search('o=yunong, ' + REPL_SUFFIX,
+    localClient.search('o=yunong, ' + REPL_SUFFIX,
                                    {filter: '(uid=*)'},
                                    function(err, res) {
       t.ok(res);
@@ -281,7 +284,7 @@ test('push add changelog with unmatched filter', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.localClient.search('foo=bar, o=yunong', {filter: '(l=*)'},
+    localClient.search('foo=bar, o=yunong', {filter: '(l=*)'},
                                    function(err, res) {
       t.ok(res);
       res.on('searchEntry', function(entry) {
@@ -388,7 +391,7 @@ test('push delete changelog', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.localClient.search('cn=supson, o=yunong, ' + REPL_SUFFIX,
+    localClient.search('cn=supson, o=yunong, ' + REPL_SUFFIX,
                                    {filter: '(uid=*)'},
                                    function(err, res) {
       if (err) {

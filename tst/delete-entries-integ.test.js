@@ -172,8 +172,8 @@ test('setup-replcontext', function(t) {
     t.ok(replContext);
     t.ok(replContext.checkpoint);
     t.ok(replContext.entryQueue);
-    t.ok(replContext.localClient);
-    t.ok(replContext.remoteClient);
+    t.ok(replContext.localPool);
+    t.ok(replContext.remotePool);
     t.ok(replContext.url);
     t.ok(replContext.entryQueue);
     t.ok(replContext.replSuffix);
@@ -184,6 +184,7 @@ test('setup-replcontext', function(t) {
     setTimeout(function() { t.end(); }, 1500);
   });
 });
+
 ///--- Now add a bunch of stuff
 
 test('bootstrap', function(t) {

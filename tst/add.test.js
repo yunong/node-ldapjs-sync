@@ -172,8 +172,8 @@ test('setup-replcontext', function(t) {
     t.ok(replContext);
     t.ok(replContext.checkpoint);
     t.ok(replContext.entryQueue);
-    t.ok(replContext.localClient);
-    t.ok(replContext.remoteClient);
+    t.ok(replContext.localPool);
+    t.ok(replContext.remotePool);
     t.ok(replContext.url);
     t.ok(replContext.entryQueue);
     t.ok(replContext.replSuffix);
@@ -324,18 +324,20 @@ test('add entry to datastore', function(t) {
   };
 
   add.add(changelog, replContext, function() {
-    replContext.localClient.search(changelog.localDn,
-                                   function(err, res) {
-      t.ok(res);
+    replContext.localPool.acquire(function(err, localClient) {
+      localClient.search(changelog.localDn,
+                                     function(err, res) {
+        t.ok(res);
 
-      res.on('searchEntry', function(entry) {
-        t.ok(entry);
-        t.ok(entry.object);
-        t.equal(entry.object.dn, changelog.object.targetdn);
-      });
+        res.on('searchEntry', function(entry) {
+          t.ok(entry);
+          t.ok(entry.object);
+          t.equal(entry.object.dn, changelog.object.targetdn);
+        });
 
-      res.on('end', function(res) {
-        t.end();
+        res.on('end', function(res) {
+          t.end();
+        });
       });
     });
   });

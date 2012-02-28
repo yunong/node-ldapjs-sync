@@ -1,38 +1,17 @@
 {
-  "local_url": "ldap://cn=root:secret@0.0.0.0:23455",
-  "remote_url": "ldap://cn=root:secret@0.0.0.0:23456/o=oz??sub?(uid=*)",
+  "local_url": "ldap://cn=root:secret@0.0.0.0:23456",
+  "remote_url": "ldap://cn=root:secret@0.0.0.0:23364/o=oz??sub?(uid=*)",
   "replication_dn": "o=somewhereovertherainbow",
   "checkpoint_dn": "o=somewhereovertherainbow",
-  "loggers": {
-    "appenders": [
-      {
-        "type": "console"
-      }
-    ]
+  "logLevel": "trace",
+  "local_pool": {
+    "max": 10,
+    "idleTimeoutMillis": 30000,
+    "reapIntervalMillis": 1000
   },
-  "logLevel": "TRACE",
-  "local_client": {
-    "retry": {
-      "retries": 3,
-      "factor": 2,
-      "minTimeout": 1000,
-      "maxTimeout": 10000
-    },
-    "cache": {
-      "size": 100,
-      "age": 30
-    }
-  },
-  "remote_client": {
-    "retry": {
-      "retries": 3,
-      "factor": 2,
-      "minTimeout": 1000,
-      "maxTimeout": 10000
-    },
-    "cache": {
-      "size": 100,
-      "age": 30
-    }
+  "remote_pool": {
+    "max": 10,
+    "idleTimeoutMillis": 30000,
+    "reapIntervalMillis": 1000
   }
 }
