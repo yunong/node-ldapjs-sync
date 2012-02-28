@@ -46,7 +46,7 @@ var log = new bunyan({
 
 var REPL_CONTEXT_OPTIONS = {
   log: log,
-  url: REMOTE_URL,
+  remoteUrl: REMOTE_URL,
   localUrl: LOCAL_URL,
   checkpointDn: LOCAL_SUFFIX,
   replSuffix: REPL_SUFFIX
@@ -163,7 +163,7 @@ test('setup-replcontext', function(t) {
     t.ok(replicator.entryQueue);
     t.ok(replicator.localPool);
     t.ok(replicator.remotePool);
-    t.ok(replicator.url);
+    t.ok(replicator.remoteUrl);
     t.ok(replicator.entryQueue);
     t.ok(replicator.replSuffix);
     entryQueue = replicator.entryQueue;
@@ -174,121 +174,6 @@ test('setup-replcontext', function(t) {
   });
 });
 
-
-///--- Simple CRUD
-test('add', function(t) {
-  var entry = { objectclass: 'executor', uid: 'foo' };
-  remoteClient.add('o=yunong', entry, function(err, res) {
-    if (err) {
-      t.fail(err);
-    }
-
-    entryQueue.on('popped', function(changelog, entryQueue) {
-      localClient.search('o=yunong, ' + REPL_SUFFIX, function(err, res) {
-        log.info('searching locally');
-        if (err) {
-          t.fail(err);
-          t.end();
-        }
-        var gotEntry;
-        res.on('searchEntry', function(entry) {
-          t.ok(entry);
-          t.ok(entry instanceof ldap.SearchEntry);
-          t.ok(entry.dn.toString());
-          t.ok(entry.attributes);
-          t.ok(entry.attributes.length);
-          t.ok(entry.object);
-          t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
-          gotEntry = true;
-        });
-
-        res.on('error', function(err) {
-          t.fail(err);
-          t.end();
-        });
-
-        res.on('end', function(res) {
-          t.ok(gotEntry);
-          t.end();
-        });
-      });
-    });
-  });
-});
-
-test('modify', function(t) {
-  var change = {
-    type: 'add',
-    modification: {
-      'pets': ['honey badger', 'bear']
-    }
-  };
-
-  remoteClient.modify('o=yunong', change, function(err, res) {
-    if (err) {
-      t.fail(err);
-      t.end();
-    }
-    entryQueue.on('popped', function(changelog, entryQueue) {
-      localClient.search('o=yunong, ' + REPL_SUFFIX,
-                         function(err, res) {
-        if (err) {
-          t.fail(err);
-          t.end();
-        }
-
-        res.on('searchEntry', function(entry) {
-          t.ok(entry);
-          t.ok(entry instanceof ldap.SearchEntry);
-          t.ok(entry.dn.toString());
-          t.ok(entry.attributes);
-          t.ok(entry.attributes.length);
-          t.ok(entry.object);
-          t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
-          t.equal(entry.object.pets[0], 'honey badger');
-          t.equal(entry.object.pets[1], 'bear');
-        });
-        res.on('error', function(err) {
-          t.fail(err);
-        });
-        res.on('end', function(res) {
-          t.end();
-        });
-      });
-    });
-  });
-});
-
-test('delete', function(t) {
-  remoteClient.del('o=yunong', function(err, res) {
-    if (err) {
-      t.fail(err);
-      t.end();
-    }
-    entryQueue.on('popped', function(changelog, entryQueue) {
-      localClient.search('o=yunong, ' + REPL_SUFFIX,
-                         function(err, res) {
-        if (err) {
-          t.fail(err);
-          t.end();
-        }
-        res.on('searchEntry', function(entry) {
-          t.fail('deleted entry should not exist locally');
-        });
-        res.on('error', function(err) {
-          t.equal(err.code, 32);
-          t.end();
-        });
-        res.on('end', function(res) {
-          t.end();
-        });
-      });
-    });
-  });
-});
-
 tap.tearDown(function() {
   process.exit(tap.output.results.fail);
 });
-
-

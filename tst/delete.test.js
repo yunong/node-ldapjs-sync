@@ -47,7 +47,7 @@ var log = new bunyan({
 
 var REPL_CONTEXT_OPTIONS = {
   log: log,
-  url: REMOTE_URL,
+  remoteUrl: REMOTE_URL,
   localUrl: LOCAL_URL,
   checkpointDn: LOCAL_SUFFIX,
   replSuffix: REPL_SUFFIX
@@ -164,7 +164,7 @@ test('setup-replcontext', function(t) {
     t.ok(replicator.entryQueue);
     t.ok(replicator.localPool);
     t.ok(replicator.remotePool);
-    t.ok(replicator.url);
+    t.ok(replicator.remoteUrl);
     t.ok(replicator.entryQueue);
     t.ok(replicator.replSuffix);
     entryQueue = replicator.entryQueue;
