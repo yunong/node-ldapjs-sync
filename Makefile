@@ -42,7 +42,7 @@ all:
 
 .PHONY: test
 test: $(TAP)
-	TAP=1 $(TAP) test/*.test.js
+	TAP=1 $(TAP) tst/*.test.js
 
 include ./Makefile.deps
 include ./Makefile.targ
