@@ -9,7 +9,7 @@ var tap = require('tap');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
-var ReplContext = require('../lib/replContext');
+var Replicator = require('../lib/replicator');
 
 var inMemLdap = require('./inmemLdap');
 var remoteInMemLdap = require('./remoteLdap');
@@ -70,7 +70,7 @@ var remoteLdap;
 var entryQueue;
 var url = ldap.url.parse(REMOTE_URL, true);
 
-var replContext;
+var replicator;
 ///--- Tests
 
 test('setup-local', function(t) {
@@ -156,17 +156,17 @@ test('setup-remote-client', function(t) {
 
 test('setup-replcontext', function(t) {
   REPL_CONTEXT_OPTIONS.localClient = localClient;
-  replContext = new ReplContext(REPL_CONTEXT_OPTIONS);
-  replContext.once('init', function(self) {
-    t.ok(replContext);
-    t.ok(replContext.checkpoint);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.localPool);
-    t.ok(replContext.remotePool);
-    t.ok(replContext.url);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.replSuffix);
-    entryQueue = replContext.entryQueue;
+  replicator = new Replicator(REPL_CONTEXT_OPTIONS);
+  replicator.once('init', function(self) {
+    t.ok(replicator);
+    t.ok(replicator.checkpoint);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.localPool);
+    t.ok(replicator.remotePool);
+    t.ok(replicator.url);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.replSuffix);
+    entryQueue = replicator.entryQueue;
     // we are technically good to go here after the init event, however, the
     // changelog psearch is asynchronous, so we have to wait here a bit while
     // that finishes. 1.5 seconds ought to do it.
@@ -174,6 +174,121 @@ test('setup-replcontext', function(t) {
   });
 });
 
+
+///--- Simple CRUD
+test('add', function(t) {
+  var entry = { objectclass: 'executor', uid: 'foo' };
+  remoteClient.add('o=yunong', entry, function(err, res) {
+    if (err) {
+      t.fail(err);
+    }
+
+    entryQueue.on('popped', function(changelog, entryQueue) {
+      localClient.search('o=yunong, ' + REPL_SUFFIX, function(err, res) {
+        log.info('searching locally');
+        if (err) {
+          t.fail(err);
+          t.end();
+        }
+        var gotEntry;
+        res.on('searchEntry', function(entry) {
+          t.ok(entry);
+          t.ok(entry instanceof ldap.SearchEntry);
+          t.ok(entry.dn.toString());
+          t.ok(entry.attributes);
+          t.ok(entry.attributes.length);
+          t.ok(entry.object);
+          t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
+          gotEntry = true;
+        });
+
+        res.on('error', function(err) {
+          t.fail(err);
+          t.end();
+        });
+
+        res.on('end', function(res) {
+          t.ok(gotEntry);
+          t.end();
+        });
+      });
+    });
+  });
+});
+
+test('modify', function(t) {
+  var change = {
+    type: 'add',
+    modification: {
+      'pets': ['honey badger', 'bear']
+    }
+  };
+
+  remoteClient.modify('o=yunong', change, function(err, res) {
+    if (err) {
+      t.fail(err);
+      t.end();
+    }
+    entryQueue.on('popped', function(changelog, entryQueue) {
+      localClient.search('o=yunong, ' + REPL_SUFFIX,
+                         function(err, res) {
+        if (err) {
+          t.fail(err);
+          t.end();
+        }
+
+        res.on('searchEntry', function(entry) {
+          t.ok(entry);
+          t.ok(entry instanceof ldap.SearchEntry);
+          t.ok(entry.dn.toString());
+          t.ok(entry.attributes);
+          t.ok(entry.attributes.length);
+          t.ok(entry.object);
+          t.equal(entry.dn.toString(), 'o=yunong, ' + REPL_SUFFIX);
+          t.equal(entry.object.pets[0], 'honey badger');
+          t.equal(entry.object.pets[1], 'bear');
+        });
+        res.on('error', function(err) {
+          t.fail(err);
+        });
+        res.on('end', function(res) {
+          t.end();
+        });
+      });
+    });
+  });
+});
+
+test('delete', function(t) {
+  remoteClient.del('o=yunong', function(err, res) {
+    if (err) {
+      t.fail(err);
+      t.end();
+    }
+    entryQueue.on('popped', function(changelog, entryQueue) {
+      localClient.search('o=yunong, ' + REPL_SUFFIX,
+                         function(err, res) {
+        if (err) {
+          t.fail(err);
+          t.end();
+        }
+        res.on('searchEntry', function(entry) {
+          t.fail('deleted entry should not exist locally');
+        });
+        res.on('error', function(err) {
+          t.equal(err.code, 32);
+          t.end();
+        });
+        res.on('end', function(res) {
+          t.end();
+        });
+      });
+    });
+  });
+});
+
 tap.tearDown(function() {
   process.exit(tap.output.results.fail);
 });
+
+

@@ -10,7 +10,7 @@ var tap = require('tap');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
-var ReplContext = require('../lib/replContext');
+var Replicator = require('../lib/replicator');
 
 var inMemLdap = require('./inmemLdap');
 var remoteInMemLdap = require('./remoteLdap');
@@ -71,7 +71,7 @@ var remoteLdap;
 var entryQueue;
 var url = ldap.url.parse(REMOTE_URL, true);
 
-var replContext;
+var replicator;
 ///--- Tests
 
 test('setup-local', function(t) {
@@ -157,17 +157,17 @@ test('setup-remote-client', function(t) {
 
 test('setup-replcontext', function(t) {
   REPL_CONTEXT_OPTIONS.localClient = localClient;
-  replContext = new ReplContext(REPL_CONTEXT_OPTIONS);
-  replContext.once('init', function(self) {
-    t.ok(replContext);
-    t.ok(replContext.checkpoint);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.localPool);
-    t.ok(replContext.remotePool);
-    t.ok(replContext.url);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.replSuffix);
-    entryQueue = replContext.entryQueue;
+  replicator = new Replicator(REPL_CONTEXT_OPTIONS);
+  replicator.once('init', function(self) {
+    t.ok(replicator);
+    t.ok(replicator.checkpoint);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.localPool);
+    t.ok(replicator.remotePool);
+    t.ok(replicator.url);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.replSuffix);
+    entryQueue = replicator.entryQueue;
     // we are technically good to go here after the init event, however, the
     // changelog psearch is asynchronous, so we have to wait here a bit while
     // that finishes. 1.5 seconds ought to do it.
@@ -199,7 +199,7 @@ test('add entry to datastore', function(t) {
     localDn: 'o=yunong, ' + REPL_SUFFIX
   };
 
-  add.add(changelog, replContext, function() {
+  add.add(changelog, replicator, function() {
     localClient.search(changelog.localDn,
                                    function(err, res) {
       t.ok(res);
@@ -233,7 +233,7 @@ test('delete local search entry dne', function(t) {
     localDn: 'cn=foo, o=yunong, ' + REPL_SUFFIX
   };
 
-  del.localSearch(changelog, replContext, function(bail) {
+  del.localSearch(changelog, replicator, function(bail) {
     if (bail) {
       t.end();
     } else {
@@ -257,7 +257,7 @@ test('delete local search entry exists', function(t) {
     localDn: 'o=yunong, ' + REPL_SUFFIX
   };
 
-  del.localSearch(changelog, replContext, function(bail) {
+  del.localSearch(changelog, replicator, function(bail) {
     if (bail) {
       t.fail();
     } else {
@@ -296,7 +296,7 @@ test('determineDelete entry matches', function(t) {
       localDn: 'cn=supson, o=yunong, ' + REPL_SUFFIX
     };
 
-    del.determineDelete(changelog, replContext, function() {
+    del.determineDelete(changelog, replicator, function() {
       var opts = {
         filter: '(uid=*)'
       };
@@ -347,7 +347,7 @@ test('determineDelete entry does not match', function(t) {
       localDn: 'cn=supsons, o=yunong, ' + REPL_SUFFIX
     };
 
-    del.determineDelete(changelog, replContext, function() {
+    del.determineDelete(changelog, replicator, function() {
       var opts = {
         filter: '(l=*)'
       };

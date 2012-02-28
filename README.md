@@ -1,13 +1,13 @@
 # About
 [ldapjs-sync](https://github.com/yunong/node-ldapjs-sync) is a replication
-framework for [ldapjs](https://github.com/mcavage/node-ldapjs). It's based 
-loosely on the ldap persistent search
-[rfc](http://tools.ietf.org/id/draft-ietf-ldapext-psearch-03.txt).
+framework for [ldapjs](https://github.com/mcavage/node-ldapjs).
 
 # Design
 
 It's assumed that the reader is familiar with ldap, ldap changelogs, and ldap persistent
-search. If not, take a look at the [ldapjs guide](http://ldapjs.org/guide.html) first.
+search. If not, take a look at the [ldapjs guide](http://ldapjs.org/guide.html) first and the
+[psearch](http://tools.ietf.org/id/draft-ietf-ldapext-psearch-03.txt) and
+[changelog](http://tools.ietf.org/html/draft-good-ldap-changelog-04) rfcs.
 
 Given a master ldap server A, and a slave ldap server B, replication from A to B is
 performed as follows (at a very high level):
@@ -15,30 +15,70 @@ performed as follows (at a very high level):
 1. B gets changes from A by searching A for changelogs.
 2. B applies the changelogs from A.
 
+For more information on the design, see: [ldapjs-sync design](link needed).
+
 # Requirements
 
-## Transactions
-
-## Persistent Search
+The backend implementation of the remote server must support transactions, persistent search, and changelogs. The reference in memory ldap backend at lib/inmemLdap.js implements the following requirements.
 
 ## Changelogs
 
+The master ldap server backend must implement ldap [changelogs](http://tools.ietf.org/html/draft-good-ldap-changelog-04)
+. The changenumbers must be strictly increasing, corresponding with the order of events.
+
+An additional "entry" field which contain the complete copy of the modified entry must be added to all "modify" changelogs.
+
+## Transactions
+
+This design relies on strictly increasing change numbers which map the order of events on the remote server. This requirement guarantees the strict ordering of events. This in turn requires a datastore that supports transactions.
+
+## Persistent Search
+
+Persistent search must be implemented for changelogs. This allows the slave server to listen for changes from the master. For more information, see the ldap persistent search
+[rfc](http://tools.ietf.org/id/draft-ietf-ldapext-psearch-03.txt).
+
 # Usage
     var ldapjs-sync = require('ldapjs-sync');
+    var bunyan = require('bunyan');
+
+    var log = new bunyan({
+      name: 'ldap-replication',
+      stream: process.stdout
+    });
 
     var Replicator = new ldapjs-sync();
-    var options = {
 
+    // replicator configs
+    var options = {
+      log: log,
+      url: 'ldap://cn=root:secret@0.0.0.0:23364/o=oz??sub?(uid=*)',
+      localUrl: 'ldap://cn=root:secret@0.0.0.0:23456',
+      checkpointDn: 'o=somewhereovertherainbow',
+      replSuffix: 'o=somewhereovertherainbow',
+      localPoolCfg: {
+        max: 10,
+        idleTimeoutMillis: 30000,
+        reapIntervalMillis: 1000,
+        log: log
+      },
+      remotePoolCfg: {
+        max: 10,
+        idleTimeoutMillis: 30000,
+        reapIntervalMillis: 1000,
+        log: log
+      }
     };
+
     Replicator.on('init', function() {
       console.log('replication has started');
     });
 
+    // initialize the replicator
     Replicator.init(options);
 
-You can also run the replicator from the cmd line
+You can also run the replicator from the cmd line like so.
 
-    $ ./bin/main.js -f ../cfg/config.json
+    $ ./bin/main.js -f ./cfg/config.json
 
 # Configuration
 
@@ -64,7 +104,7 @@ You can also run the replicator from the cmd line
     scope : one of "base" / "one" / "sub". (most cases sub would be used)
     filter : filter used for the replicated entries.
 
-The dn and filter fields allow the replication of only a portion of a ldap directory. 
+The dn and filter fields allow the replication of only a portion of a ldap directory.
 
 ## Pool Configs
 
@@ -73,7 +113,7 @@ configured per the node-pool docs.
 
 ## Checkpoint DN
 
-The replicator 
+The replicator
 
 # Installation
 

@@ -11,7 +11,7 @@ var uuid = require('node-uuid');
 var vm = require('vm');
 var Checkpoint = require('../lib/checkpoint');
 var EntryQueue = require('../lib/entryQueue');
-var ReplContext = require('../lib/replContext');
+var Replicator = require('../lib/replicator');
 
 var inMemLdap = require('./inmemLdap');
 

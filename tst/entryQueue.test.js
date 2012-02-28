@@ -2,7 +2,7 @@
  * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
  */
 
-var ReplContext = require('../lib/replContext.js');
+var Replicator = require('../lib/replicator.js');
 var add = require('../lib/add.js');
 var bunyan = require('bunyan');
 var inMemLdap = require('./inmemLdap.js');
@@ -112,17 +112,17 @@ test('setup-remote-client', function(t) {
 
 test('setup-replcontext', function(t) {
   REPL_CONTEXT_OPTIONS.localClient = localClient;
-  replContext = new ReplContext(REPL_CONTEXT_OPTIONS);
-  replContext.once('init', function(self) {
-    t.ok(replContext);
-    t.ok(replContext.checkpoint);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.localPool);
-    t.ok(replContext.remotePool);
-    t.ok(replContext.url);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.replSuffix);
-    entryQueue = replContext.entryQueue;
+  replicator = new Replicator(REPL_CONTEXT_OPTIONS);
+  replicator.once('init', function(self) {
+    t.ok(replicator);
+    t.ok(replicator.checkpoint);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.localPool);
+    t.ok(replicator.remotePool);
+    t.ok(replicator.url);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.replSuffix);
+    entryQueue = replicator.entryQueue;
     // we are technically good to go here after the init event, however, the
     // changelog psearch is asynchronous, so we have to wait here a bit while
     // that finishes. 1.5 seconds ought to do it.
@@ -172,22 +172,22 @@ test('push with handler chain', function(t) {
   var invoked2;
   var invocations = 0;
   var entries = 0;
-  var func1 = function(changelog, replContext, next) {
+  var func1 = function(changelog, replicator, next) {
     if (!invoked2) {
       invoked1 = true;
     }
     t.ok(changelog);
-    t.ok(replContext);
+    t.ok(replicator);
     t.ok(next);
     invocations++;
     next();
   };
-  var func2 = function(changelog, replContext, next) {
+  var func2 = function(changelog, replicator, next) {
     if (invoked1) {
       invoked2 = true;
     }
     t.ok(changelog);
-    t.ok(replContext);
+    t.ok(replicator);
     t.ok(next);
     invoked1 = false;
     invoked2 = false;
@@ -332,7 +332,7 @@ test('push delete changelog dn doesn\'t match', function(t) {
   };
 
   entryQueue.on('popped', function() {
-    replContext.checkpoint.get(function(cp) {
+    replicator.checkpoint.get(function(cp) {
       t.equal(true, cp == changelog.object.changenumber);
       t.end();
     });
@@ -355,7 +355,7 @@ test('push delete changelog filter doesn\'t match', function(t) {
     };
 
     entryQueue.on('popped', function() {
-      replContext.checkpoint.get(function(cp) {
+      replicator.checkpoint.get(function(cp) {
         t.equal(true, cp == changelog.object.changenumber);
         t.end();
       });

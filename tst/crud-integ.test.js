@@ -9,7 +9,7 @@ var tap = require('tap');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
-var ReplContext = require('../lib/replContext');
+var Replicator = require('../lib/replicator');
 
 var inMemLdap = require('./inmemLdap');
 var remoteInMemLdap = require('./remoteLdap');
@@ -70,7 +70,7 @@ var remoteLdap;
 var entryQueue;
 var url = ldap.url.parse(REMOTE_URL, true);
 
-var replContext;
+var replicator;
 ///--- Tests
 
 test('setup-local', function(t) {
@@ -156,17 +156,17 @@ test('setup-remote-client', function(t) {
 
 test('setup-replcontext', function(t) {
   REPL_CONTEXT_OPTIONS.localClient = localClient;
-  replContext = new ReplContext(REPL_CONTEXT_OPTIONS);
-  replContext.once('init', function(self) {
-    t.ok(replContext);
-    t.ok(replContext.checkpoint);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.localPool);
-    t.ok(replContext.remotePool);
-    t.ok(replContext.url);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.replSuffix);
-    entryQueue = replContext.entryQueue;
+  replicator = new Replicator(REPL_CONTEXT_OPTIONS);
+  replicator.once('init', function(self) {
+    t.ok(replicator);
+    t.ok(replicator.checkpoint);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.localPool);
+    t.ok(replicator.remotePool);
+    t.ok(replicator.url);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.replSuffix);
+    entryQueue = replicator.entryQueue;
     // we are technically good to go here after the init event, however, the
     // changelog psearch is asynchronous, so we have to wait here a bit while
     // that finishes. 1.5 seconds ought to do it.

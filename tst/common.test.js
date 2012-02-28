@@ -9,7 +9,7 @@ var test = require('tap').test;
 var inMemLdap = require('./inmemLdap.js');
 var remoteInMemLdap = require('./remoteLdap');
 
-var ReplContext = require('../lib/replContext.js');
+var Replicator = require('../lib/replicator.js');
 var ldap = require('ldapjs');
 var uuid = require('node-uuid');
 
@@ -112,16 +112,16 @@ test('setup-remote-client', function(t) {
 
 test('setup-replcontext', function(t) {
   REPL_CONTEXT_OPTIONS.localClient = localClient;
-  replContext = new ReplContext(REPL_CONTEXT_OPTIONS);
-  replContext.once('init', function(self) {
-    t.ok(replContext);
-    t.ok(replContext.checkpoint);
-    t.ok(replContext.entryQueue);
-    t.ok(replContext.localPool);
-    t.ok(replContext.remotePool);
-    t.ok(replContext.url);
-    t.ok(replContext.entryQueue);
-    entryQueue = replContext.entryQueue;
+  replicator = new Replicator(REPL_CONTEXT_OPTIONS);
+  replicator.once('init', function(self) {
+    t.ok(replicator);
+    t.ok(replicator.checkpoint);
+    t.ok(replicator.entryQueue);
+    t.ok(replicator.localPool);
+    t.ok(replicator.remotePool);
+    t.ok(replicator.url);
+    t.ok(replicator.entryQueue);
+    entryQueue = replicator.entryQueue;
     // wait before we end because the search connection is just getting started
     // otherwise the test can't shut down cleanly. Of course this is lame.
     setTimeout(function() {t.end();}, 2000);
@@ -137,8 +137,8 @@ test('test common writeCheckpoint', function(t) {
     }
   };
 
-  common.writeCheckpoint(changelog, replContext, function() {
-    replContext.checkpoint.get(function(cn) {
+  common.writeCheckpoint(changelog, replicator, function() {
+    replicator.checkpoint.get(function(cn) {
         t.equal((100 == cn), true);
         t.end();
     });
@@ -153,7 +153,7 @@ test('test common changenumber less than checkpoint', function(t) {
     }
   };
 
-  common.getCheckpoint(changelog, replContext, function(bail) {
+  common.getCheckpoint(changelog, replicator, function(bail) {
     // we should bail
     t.ok(bail);
     t.end();
@@ -169,7 +169,7 @@ test('test common changenumber equals checkpoint', function(t) {
     }
   };
 
-  common.getCheckpoint(changelog, replContext, function(bail) {
+  common.getCheckpoint(changelog, replicator, function(bail) {
     t.ok(bail);
     t.end();
   });
@@ -184,7 +184,7 @@ test('test common changenumber greater than checkpoint', function(t) {
     }
   };
 
-  common.getCheckpoint(changelog, replContext, function() {
+  common.getCheckpoint(changelog, replicator, function() {
     t.end();
   });
 });
@@ -207,7 +207,7 @@ test('localsearch exists', function(t) {
     localDn: 'cn=supson, o=yunong'
   };
 
-  common.localSearch(changelog, replContext, function(bail) {
+  common.localSearch(changelog, replicator, function(bail) {
     // bail should never be set
     if (bail) {
       t.fail();
@@ -227,7 +227,7 @@ test('localsearch dne', function(t) {
     localDn: 'cn=foobarbazcar, o=yunong'
   };
 
-  common.localSearch(changelog, replContext, function(bail) {
+  common.localSearch(changelog, replicator, function(bail) {
     // bail should never be set
     if (bail) {
       t.fail();
