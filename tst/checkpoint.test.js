@@ -5,6 +5,7 @@
 var add = require('../lib/add.js');
 var bunyan = require('bunyan');
 var ldap = require('ldapjs');
+var tap = require('tap');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var vm = require('vm');
@@ -99,8 +100,6 @@ test('set/get checkpoint', function(t) {
   });
 });
 
-test('tear-down', function(t) {
-  // time this out so loggers will flush
-  t.end();
-  setTimeout(function() {process.exit(0);}, 2000);
+tap.tearDown(function() {
+  process.exit(tap.output.results.fail);
 });

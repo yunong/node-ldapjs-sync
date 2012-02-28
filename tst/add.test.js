@@ -5,16 +5,19 @@
 var add = require('../lib/add.js');
 var bunyan = require('bunyan');
 var ldap = require('ldapjs');
+var tap = require('tap');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
 var ReplContext = require('../lib/replContext');
 
 var inMemLdap = require('./inmemLdap');
+var remoteInMemLdap = require('./remoteLdap');
 
 ///--- Globals
 var SUFFIX = 'o=yunong';
 var LOCAL_SUFFIX = 'o=somewhereovertherainbow';
+var REMOTE_SUFFIX = 'o=yunong';
 var REPL_SUFFIX = 'cn=repl, ' + LOCAL_SUFFIX;
 var SOCKET = '/tmp/.' + uuid();
 var REMOTE_PORT = 23364;
@@ -39,7 +42,7 @@ var log = new bunyan({
     stream: process.stdout,
     level: 'trace',
     src: true
-  });
+});
 
 var REPL_CONTEXT_OPTIONS = {
   log: log,
@@ -74,6 +77,7 @@ test('setup-local', function(t) {
   inMemLdap.startServer({suffix: LOCAL_SUFFIX, port: LOCAL_PORT},
                         function(server) {
     t.ok(server);
+    localLdap = server;
     localClient = ldap.createClient({
       url: LOCAL_URL,
       log: log
@@ -120,27 +124,12 @@ test('setup-local-fixtures', function(t) {
 });
 
 test('setup-remote', function(t) {
-  var spawn = require('child_process').spawn;
-  remoteLdap = spawn('node', ['./tst/remoteInmemldap.js'], {
-    cwd: undefined,
-    env: process.env,
-    setsid: false
+  remoteInMemLdap.startServer({suffix: REMOTE_SUFFIX, port: REMOTE_PORT},
+                        function(server) {
+    t.ok(server);
+    remoteLdap = server;
+    t.end();
   });
-
-  remoteLdap.stdout.on('data', function(data) {
-    console.info('remote_stdout: ' + data);
-  });
-
-  remoteLdap.stderr.on('data', function(data) {
-    console.info('remote_stderr: ' + data);
-  });
-
-  remoteLdap.on('exit', function(code) {
-    console.info('remote_child process exited with code ' + code);
-  });
-
-  t.ok(remoteLdap);
-  setTimeout(function() { t.end(); }, 1000);
 });
 
 test('setup-remote-client', function(t) {
@@ -184,6 +173,7 @@ test('setup-replcontext', function(t) {
     setTimeout(function() { t.end(); }, 1500);
   });
 });
+
 test('add mismatched filter entry changelotToEntry', function(t) {
   var changelog = {
     object: {
@@ -208,7 +198,7 @@ test('add mismatched filter entry changelotToEntry', function(t) {
     }
   });
 
-  // wait 1 sec before checking that the checkpoint has been added, ghetto, but
+  // wait before checking that the checkpoint has been added, ghetto, but
   // oh well.
   setTimeout(
     function() {
@@ -217,7 +207,7 @@ test('add mismatched filter entry changelotToEntry', function(t) {
           t.end();
         });
     },
-    1000);
+    200);
 });
 
 test('add mismatched dn entry changelotToEntry', function(t) {
@@ -245,7 +235,7 @@ test('add mismatched dn entry changelotToEntry', function(t) {
     }
   });
 
-  // wait 1 sec before checking that the checkpoint has been added, ghetto, but
+  // wait before checking that the checkpoint has been added, ghetto, but
   // oh well.
   setTimeout(
     function() {
@@ -254,7 +244,7 @@ test('add mismatched dn entry changelotToEntry', function(t) {
           t.end();
         });
     },
-    1000);
+    200);
 });
 
 test('add matching entry changelotToEntry', function(t) {
@@ -343,9 +333,6 @@ test('add entry to datastore', function(t) {
   });
 });
 
-test('tear-down', function(t) {
-  if (remoteLdap) {
-    setTimeout(function() { remoteLdap.kill(); }, 3000);
-  }
-  t.end();
+tap.tearDown(function() {
+  process.exit(tap.output.results.fail);
 });

@@ -5,16 +5,19 @@
 var add = require('../lib/add.js');
 var bunyan = require('bunyan');
 var ldap = require('ldapjs');
+var tap = require('tap');
 var test = require('tap').test;
 var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
 var ReplContext = require('../lib/replContext');
 
 var inMemLdap = require('./inmemLdap');
+var remoteInMemLdap = require('./remoteLdap');
 
 ///--- Globals
 var SUFFIX = 'o=yunong';
 var LOCAL_SUFFIX = 'o=somewhereovertherainbow';
+var REMOTE_SUFFIX = 'o=yunong';
 var REPL_SUFFIX = 'cn=repl, ' + LOCAL_SUFFIX;
 var SOCKET = '/tmp/.' + uuid();
 var REMOTE_PORT = 23364;
@@ -74,6 +77,7 @@ test('setup-local', function(t) {
   inMemLdap.startServer({suffix: LOCAL_SUFFIX, port: LOCAL_PORT},
                         function(server) {
     t.ok(server);
+    localLdap = server;
     localClient = ldap.createClient({
       url: LOCAL_URL,
       log: log
@@ -120,27 +124,12 @@ test('setup-local-fixtures', function(t) {
 });
 
 test('setup-remote', function(t) {
-  var spawn = require('child_process').spawn;
-  remoteLdap = spawn('node', ['./tst/remoteInmemldap.js'], {
-    cwd: undefined,
-    env: process.env,
-    setsid: false
+  remoteInMemLdap.startServer({suffix: REMOTE_SUFFIX, port: REMOTE_PORT},
+                        function(server) {
+    t.ok(server);
+    remoteLdap = server;
+    t.end();
   });
-
-  remoteLdap.stdout.on('data', function(data) {
-    console.info('remote_stdout: ' + data);
-  });
-
-  remoteLdap.stderr.on('data', function(data) {
-    console.info('remote_stderr: ' + data);
-  });
-
-  remoteLdap.on('exit', function(code) {
-    console.info('remote_child process exited with code ' + code);
-  });
-
-  t.ok(remoteLdap);
-  setTimeout(function() { t.end(); }, 1000);
 });
 
 test('setup-remote-client', function(t) {
@@ -185,10 +174,6 @@ test('setup-replcontext', function(t) {
   });
 });
 
-test('tear-down', function(t) {
-  if (remoteLdap) {
-    // time this out so the loggers will flush
-    setTimeout(function() { remoteLdap.kill(); }, 2000);
-  }
-  t.end();
+tap.tearDown(function() {
+  process.exit(tap.output.results.fail);
 });

@@ -4,8 +4,11 @@
 
 var bunyan = require('bunyan');
 var common = require('../lib/common');
+var tap = require('tap');
 var test = require('tap').test;
 var inMemLdap = require('./inmemLdap.js');
+var remoteInMemLdap = require('./remoteLdap');
+
 var ReplContext = require('../lib/replContext.js');
 var ldap = require('ldapjs');
 var uuid = require('node-uuid');
@@ -13,6 +16,7 @@ var uuid = require('node-uuid');
 ///--- Globals
 
 var SUFFIX = 'o=yunong';
+var REMOTE_SUFFIX = 'o=yunong';
 var REMOTE_PORT = 23364;
 var TOTAL_ENTRIES = 5;
 var REMOTE_URL = 'ldap://cn=root:secret@127.0.0.1:' + REMOTE_PORT + '/' +
@@ -84,27 +88,12 @@ test('setup-local', function(t) {
 });
 
 test('setup-remote', function(t) {
-  var spawn = require('child_process').spawn;
-  remoteLdap = spawn('node', ['./tst/remoteInmemldap.js'], {
-    cwd: undefined,
-    env: process.env,
-    setsid: false
+  remoteInMemLdap.startServer({suffix: REMOTE_SUFFIX, port: REMOTE_PORT},
+                        function(server) {
+    t.ok(server);
+    remoteLdap = server;
+    t.end();
   });
-
-  remoteLdap.stdout.on('data', function(data) {
-    console.log('remote stdout: ' + data);
-  });
-
-  remoteLdap.stderr.on('data', function(data) {
-    console.log('remote stderr: ' + data);
-  });
-
-  remoteLdap.on('exit', function(code) {
-    console.log('remote child process exited with code ' + code);
-  });
-
-  t.ok(remoteLdap);
-  setTimeout(function() { t.end(); }, 1000);
 });
 
 test('setup-remote-client', function(t) {
@@ -273,9 +262,7 @@ test('convertDn', function(t) {
   });
 });
 
-test('tear-down', function(t) {
-  if (remoteLdap) {
-    setTimeout(function() { remoteLdap.kill(); }, 3000);
-  }
-  t.end();
+tap.tearDown(function() {
+  process.exit(tap.output.results.fail);
 });
+
