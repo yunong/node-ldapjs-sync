@@ -1,6 +1,6 @@
 # About
 [ldapjs-sync](https://github.com/yunong/node-ldapjs-sync) is a replication
-framework for [ldapjs](https://github.com/mcavage/node-ldapjs).
+framework for [ldapjs](https://github.com/mcavage/node-ldapjs). This framework can be configured to replicate **a part or all** of a remote ldap directory.
 
 # Design
 
@@ -12,19 +12,19 @@ search. If not, take a look at the [ldapjs guide](http://ldapjs.org/guide.html) 
 Given a master ldap server A, and a slave ldap server B, replication from A to B is
 performed as follows (at a very high level):
 
-1. B gets changes from A by searching A for changelogs.
-2. B applies the changelogs from A.
+1. B gets changelogs from A.
+2. B applies the changelogs from A locally.
 
-For more information on the design, see: [ldapjs-sync design](link needed).
+For more information on the design, see: [ldapjs-sync design](https://github.com/yunong/node-ldapjs-sync/blob/master/DESIGN.md).
 
 # Requirements
 
-The backend implementation of the remote server must support transactions, persistent search, and changelogs. The reference in memory ldap backend at lib/inmemLdap.js implements the following requirements.
+The backend implementation of the remote server must support transactions, persistent search, and changelogs. The reference in memory ldap backend at lib/inMemLdap.js implements these requirements.
 
 ## Changelogs
 
-The master ldap server backend must implement ldap [changelogs](http://tools.ietf.org/html/draft-good-ldap-changelog-04)
-. The changenumbers must be strictly increasing, corresponding with the order of events.
+The master ldap server backend must implement ldap [changelogs](http://tools.ietf.org/html/draft-good-ldap-changelog-04).
+The changenumbers must be strictly increasing, corresponding with the order of events.
 
 An additional "entry" field which contain the complete copy of the modified entry must be added to all "modify" changelogs.
 
