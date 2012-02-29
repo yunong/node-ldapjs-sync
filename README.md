@@ -134,8 +134,8 @@ replication. Start them in the following order.
 
     $ node ./example/replicator.js
 
-Performing a ldap search with the openlda cli on the slave will reveal all entries from the
-master:
+Performing a ldap search with the openldap cli on the slave will reveal all entries from
+the master:
 
     $ ldapsearch -x -LLL -D cn=root -w secret -H ldap://localhost:23455 -b 'o=kansas, o=oz' -s sub
 
