@@ -3,8 +3,8 @@
  */
 
 var inMemLdap = require('../lib/inMemLdap');
-var ldapjs = require('ldapjs');
-var uuid = require('node-uuid');
+var ldapjs    = require('ldapjs');
+var uuid      = require('node-uuid');
 
 inMemLdap.startServer({suffix: 'o=kansas', port: 23456}, function() {
   var client = ldapjs.createClient({

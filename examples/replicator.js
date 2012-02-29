@@ -2,7 +2,7 @@
  * Copyright 2012 Yunong Xiao, Inc. All rights reserved.
  */
 
-var bunyan = require('bunyan');
+var bunyan     = require('bunyan');
 var Replicator = require('ldapjs-sync');
 
 var log = new bunyan({

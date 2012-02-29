@@ -34,7 +34,8 @@ This design relies on strictly increasing change numbers which map the order of 
 
 ## Persistent Search
 
-Persistent search must be implemented for changelogs. This allows the slave server to listen for changes from the master. For more information, see the ldap persistent search
+Persistent search must be implemented for changelogs. This allows the slave server to
+listen for changes from the master. For more information, see the ldap persistent search
 [rfc](http://tools.ietf.org/id/draft-ietf-ldapext-psearch-03.txt).
 
 # Usage
@@ -73,14 +74,14 @@ Persistent search must be implemented for changelogs. This allows the slave serv
       console.log('replication has started');
     });
 
-You can also run the replicator from the cmd line like so.
+You can also run the replicator from the cmd line.
 
-    $ ./bin/main.js -f ./cfg/config.json
+    $ ./lib/main.js -f ./cfg/config.json
 
 # Configuration
 
     Replicator() accepts an options object with these members:
-        url: the ldap url of the remote master server. (string)
+        remoteUrl: the ldap url of the remote master server. (string)
         localUrl : the ldap url of the local slave server. (string)
         log : the bunyan log object. (object)
         checkpointDn : the root dn where the checkpoint is stored. (string)
