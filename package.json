@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git://github.com/yunong/node-ldapjs-sync"
   },
-  "main": "lib/replContext.js",
+  "main": "lib/replicator.js",
   "directories": {
     "lib": "./lib"
   },

@@ -46,12 +46,10 @@ Persistent search must be implemented for changelogs. This allows the slave serv
       stream: process.stdout
     });
 
-    var Replicator = new ldapjs-sync();
-
     // replicator configs
     var options = {
       log: log,
-      url: 'ldap://cn=root:secret@0.0.0.0:23364/o=oz??sub?(uid=*)',
+      remoteUrl: 'ldap://cn=root:secret@0.0.0.0:23364/o=kansas??sub?(uid=*)',
       localUrl: 'ldap://cn=root:secret@0.0.0.0:23456',
       checkpointDn: 'o=somewhereovertherainbow',
       replSuffix: 'o=somewhereovertherainbow',
@@ -69,12 +67,11 @@ Persistent search must be implemented for changelogs. This allows the slave serv
       }
     };
 
+    var Replicator = new ldapjs-sync(options);
+
     Replicator.on('init', function() {
       console.log('replication has started');
     });
-
-    // initialize the replicator
-    Replicator.init(options);
 
 You can also run the replicator from the cmd line like so.
 
@@ -85,7 +82,7 @@ You can also run the replicator from the cmd line like so.
     Replicator() accepts an options object with these members:
         url: the ldap url of the remote master server. (string)
         localUrl : the ldap url of the local slave server. (string)
-        log : the bunyan log object. (bunyan log object)
+        log : the bunyan log object. (object)
         checkpointDn : the root dn where the checkpoint is stored. (string)
         replSuffix : the root dn where the replicated entries are stored on the slave. (string)
         localPoolCfg: the node-pool config for the local client. (object, optional)
@@ -93,7 +90,9 @@ You can also run the replicator from the cmd line like so.
 
 ## Replication URLs
 
-[ldap urls](http://www.ietf.org/rfc/rfc2255.txt) are used to specify the remote ldap server with which to replicate from. Specifically the following url fields are used for replication. Given a url:
+[ldap urls](http://www.ietf.org/rfc/rfc2255.txt) are used to specify the remote ldap server
+with which to replicate from. Specifically the following url fields are used for
+replication. Given a url:
     ldap://binddn:pw@addr:port/dn??scope?filter
 
     binddn : bind DN.
@@ -108,16 +107,50 @@ The dn and filter fields allow the replication of only a portion of a ldap direc
 
 ## Pool Configs
 
-Replication utilizes the [node-pool](https://github.com/coopernurse/node-pool) lib for connection pooling. They can be
-configured per the node-pool docs.
+Replication utilizes the [node-pool](https://github.com/coopernurse/node-pool) lib for
+connection pooling. They can be configured per the node-pool docs.
 
 ## Checkpoint DN
 
-The replicator
+The replicator need to durably store a checkpoint locally in ldap to keep track of
+replication progress on the slave. Provision a dn on the local ldap server where this can
+be stored.
 
 # Installation
 
     $ npm install ldapjs-sync
+
+# Example
+
+The code within the example folder can be used to start a pair of ldap servers with
+replication. Start them in the following order.
+
+    $ node ./example/master.js &
+
+    $ node ./example/slave.js &
+
+    $ node ./example/replicator.js
+
+Performing a ldap search with the openlda cli on the slave will reveal all entries from the
+master:
+
+    $ ldapsearch -x -LLL -D cn=root -w secret -H ldap://localhost:23455 -b 'o=kansas, o=oz' -s sub
+
+    dn: o=kansas, o=oz
+    objectclass: state
+    uid: 120e2a9e-6995-4bb1-99ff-ff6e0ea2f7e0
+
+    dn: cn=dorothy, o=kansas, o=oz
+    objectclass: person
+    uid: 8ff22bb5-9cdd-44a5-b386-60e5e98e4e69
+
+    dn: cn=silver shoes, cn=dorothy, o=kansas, o=oz
+    objectclass: shoes
+    uid: 0f430feb-0b89-43e7-b628-2b07e7b54052
+
+    dn: cn=toto, cn=dorothy, o=kansas, o=oz
+    objectclass: dog
+    uid: fbadf20e-649d-4400-acf3-eac0c08521d6
 
 ## License
 

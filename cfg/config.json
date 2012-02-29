@@ -1,8 +1,8 @@
 {
-  "local_url": "ldap://cn=root:secret@0.0.0.0:23456",
-  "remote_url": "ldap://cn=root:secret@0.0.0.0:23364/o=oz??sub?(uid=*)",
-  "replication_dn": "o=somewhereovertherainbow",
-  "checkpoint_dn": "o=somewhereovertherainbow",
+  "local_url": "ldap://cn=root:secret@0.0.0.0:23455",
+  "remote_url": "ldap://cn=root:secret@0.0.0.0:23456/o=kansas??sub?(uid=*)",
+  "replication_dn": "o=oz",
+  "checkpoint_dn": "o=oz",
   "logLevel": "trace",
   "local_pool": {
     "max": 10,

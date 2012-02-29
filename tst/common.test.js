@@ -6,7 +6,7 @@ var bunyan = require('bunyan');
 var common = require('../lib/common');
 var tap = require('tap');
 var test = require('tap').test;
-var inMemLdap = require('./inmemLdap.js');
+var inMemLdap = require('../lib/inMemLdap.js');
 var remoteInMemLdap = require('./remoteLdap');
 
 var Replicator = require('../lib/replicator.js');

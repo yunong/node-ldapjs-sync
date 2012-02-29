@@ -13,7 +13,7 @@ var Checkpoint = require('../lib/checkpoint');
 var EntryQueue = require('../lib/entryQueue');
 var Replicator = require('../lib/replicator');
 
-var inMemLdap = require('./inmemLdap');
+var inMemLdap = require('../lib/inMemLdap');
 
 ///--- Globals
 var SUFFIX = 'o=yunong';

@@ -12,7 +12,7 @@ var uuid = require('node-uuid');
 var EntryQueue = require('../lib/entryQueue');
 var Replicator = require('../lib/replicator');
 
-var inMemLdap = require('./inmemLdap');
+var inMemLdap = require('../lib/inMemLdap');
 var remoteInMemLdap = require('./remoteLdap');
 
 ///--- Globals
