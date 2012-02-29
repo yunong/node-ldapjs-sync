@@ -104,7 +104,9 @@ replication. Given a url:
     scope : one of "base" / "one" / "sub". (most cases sub would be used)
     filter : filter used for the replicated entries.
 
-The dn and filter fields allow the replication of only a portion of a ldap directory.
+The dn and filter fields of the url are used to specify which parts of the remote
+directory tree to replicate. This allows for selective replication of parts of a
+directory tree.
 
 ## Pool Configs
 
